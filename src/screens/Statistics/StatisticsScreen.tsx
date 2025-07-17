@@ -28,40 +28,51 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
     try {
       console.log('StatisticsScreen: Loading offline analytics data');
       
-      // For offline mode, calculate data locally
       const currentYear = new Date().getFullYear();
       const currentMonth = new Date().getMonth();
       
-      // Create chart data showing only real completion data
+      // Create chart data showing percentage of habits completed per month
       const monthlyChartData = [];
       
-      // Only show the current month with real data
-      const currentMonthData = {
-        month: currentMonth + 1,
-        monthName: new Date(currentYear, currentMonth, 1).toLocaleString('default', { month: 'short' }),
-        completions: 0
-      };
-      
-      // Calculate actual completions for this month only
-      habitStats.forEach((stats) => {
-        currentMonthData.completions += stats.totalCompletions || 0;
-      });
-      
-      // Add 5 empty months for visual context (showing 0 completions)
-      for (let i = 5; i >= 1; i--) {
+      // Calculate percentage data for the last 6 months
+      for (let i = 5; i >= 0; i--) {
         const monthDate = new Date(currentYear, currentMonth - i, 1);
         const monthNum = monthDate.getMonth() + 1;
         const monthName = monthDate.toLocaleString('default', { month: 'short' });
+        const year = monthDate.getFullYear();
+        
+        // Calculate days in this month
+        const daysInMonth = new Date(year, monthDate.getMonth() + 1, 0).getDate();
+        
+        // Calculate total possible completions for all habits in this month
+        const totalPossibleCompletions = habits.length * daysInMonth;
+        
+        // Calculate actual completions for this month
+        let actualCompletions = 0;
+        
+        // Load offline data to count completions for this specific month/year
+        const { OfflineStorageService } = await import('@/services/storage/offlineStorage');
+        const offlineData = await OfflineStorageService.loadOfflineData();
+        
+        // Count completed entries for this month
+        actualCompletions = offlineData.habitEntries.filter(entry => {
+          const entryDate = new Date(entry.entry_date);
+          return entry.is_completed && 
+                 entryDate.getMonth() === monthDate.getMonth() && 
+                 entryDate.getFullYear() === year;
+        }).length;
+        
+        // Calculate percentage
+        const completionPercentage = totalPossibleCompletions > 0 ? 
+          Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
         
         monthlyChartData.push({
           month: monthNum,
           monthName,
-          completions: 0 // No fake data - show 0 for past months
+          completions: completionPercentage, // Now storing percentage instead of raw count
+          year: year
         });
       }
-      
-      // Add current month with real data
-      monthlyChartData.push(currentMonthData);
       
       // Calculate overall progress from habit stats
       const totalCompletions = Array.from(habitStats.values()).reduce((sum, stats) => sum + (stats.totalCompletions || 0), 0);
@@ -298,17 +309,17 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
             <View style={styles.trendChart}>
               <View style={styles.chartBars}>
                 {monthlyData.length > 0 ? monthlyData.slice(-6).map((month, index) => {
-                  const isCurrentMonth = month.month === new Date().getMonth() + 1;
-                  const maxCompletions = Math.max(...monthlyData.map(m => m.completions), 1);
-                  // Ensure height stays within bounds - max 55px to leave room for month labels in 80px container
-                  const height = Math.min(Math.max((month.completions / maxCompletions) * 55, 8), 55);
+                  const isCurrentMonth = month.month === new Date().getMonth() + 1 && month.year === new Date().getFullYear();
+                  // Since completions is now percentage (0-100), we can use it directly with a max of 100
+                  const maxHeight = 55; // Max height in pixels
+                  const height = Math.min(Math.max((month.completions / 100) * maxHeight, 8), maxHeight);
                   
                   return (
-                    <View key={month.month} style={styles.chartMonth}>
+                    <View key={`${month.year}-${month.month}`} style={styles.chartMonth}>
                       <View style={[
                         styles.chartBar, 
                         { 
-                          height: height, // Now using pixels instead of percentage
+                          height: height,
                           backgroundColor: isCurrentMonth ? colors.primary : colors.textSecondary 
                         }
                       ]} />
@@ -318,6 +329,13 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
                         isCurrentMonth && styles.currentMonth
                       ]}>
                         {month.monthName}
+                      </Text>
+                      <Text style={[
+                        typography.caption,
+                        styles.percentageLabel,
+                        { color: isCurrentMonth ? colors.primary : colors.textSecondary }
+                      ]}>
+                        {month.completions}%
                       </Text>
                     </View>
                   );
@@ -335,8 +353,8 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
               <View style={styles.trendItem}>
                 <Ionicons name="trending-up" size={16} color={colors.success} />
                 <Text style={[typography.bodySmall, styles.trendText]}>
-                  {monthlyData.length > 1 ? 
-                    `${monthlyData[monthlyData.length - 1]?.completions || 0} completions this month` :
+                  {monthlyData.length > 0 ? 
+                    `${monthlyData[monthlyData.length - 1]?.completions || 0}% completion this month` :
                     'Keep building your habits!'
                   }
                 </Text>
@@ -372,7 +390,7 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
             
             <View style={styles.recordItem}>
               <Text style={[typography.h5, styles.recordValue]}>
-                {monthlyData.length > 0 ? Math.max(...monthlyData.map(m => m.completions), 0) : 0}
+                {monthlyData.length > 0 ? Math.max(...monthlyData.map(m => m.completions), 0) : 0}%
               </Text>
               <Text style={[typography.caption, styles.recordLabel]}>
                 ⚡ Best Month
@@ -485,7 +503,7 @@ const styles = StyleSheet.create({
     gap: -4, // Negative gap to bring text closer to month labels
   },
   trendChart: {
-    height: 125, // Increased box size for more space
+    height: 140, // Increased to accommodate percentage labels
   },
   chartBars: {
     flexDirection: 'row',
@@ -497,7 +515,7 @@ const styles = StyleSheet.create({
   },
   chartMonth: {
     alignItems: 'center',
-    gap: 2, // Minimal gap (2px) between bar and month label
+    gap: 2, // Minimal gap (2px) between bar and labels
   },
   chartBar: {
     width: 16,
@@ -507,6 +525,11 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     color: colors.textSecondary,
+  },
+  percentageLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 2,
   },
   currentMonth: {
     color: colors.primary,

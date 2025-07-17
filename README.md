@@ -91,15 +91,11 @@ npm run android          # Start with Android tunnel
 npm run ios              # Start with iOS tunnel
 
 # Code Quality
-npm run lint             # Run ESLint
-npm run lint:fix         # Fix ESLint issues
-npm run format           # Format code with Prettier
-npm run format:check     # Check formatting
 npm run typecheck        # Run TypeScript compiler
 
 # Testing & Validation
 npm run test             # Run tests
-npm run validate         # Run all checks (typecheck + lint + format)
+npm run validate         # Run all checks (typecheck + tests)
 ```
 
 ### Project Structure
@@ -123,8 +119,6 @@ habitos/
 
 ### Code Quality Standards
 
-- **ESLint**: TypeScript and React Native best practices
-- **Prettier**: Consistent code formatting
 - **TypeScript**: Strict type checking
 - **Husky**: Git hooks for pre-commit validation
 - **Conventional Commits**: Standardized commit messages

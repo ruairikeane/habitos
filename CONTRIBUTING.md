@@ -47,21 +47,7 @@ Thank you for your interest in contributing to Habitos! This guide will help you
 
 ### Code Style
 
-We use ESLint and Prettier for consistent code formatting:
-
-```bash
-# Check code formatting
-npm run format:check
-
-# Fix formatting
-npm run format
-
-# Run linter
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-```
+We focus on TypeScript best practices and consistent code organization:
 
 ### TypeScript
 

@@ -48,15 +48,15 @@ export class HabitAnalyticsService {
         // No recent completion, streak is broken
         currentStreak = 0;
       } else {
-        // Count consecutive days from most recent
-        const sortedDates = entries.map(e => e.entry_date).sort((a, b) => b.localeCompare(a));
+        // Count consecutive days backward from today/yesterday
+        const completedDates = new Set(entries.map(e => e.entry_date));
+        let checkDate = new Date(completedToday ? today : yesterday);
         
-        let checkDate = completedToday ? today : yesterday;
-        
-        for (const entryDate of sortedDates) {
+        // Count consecutive days going backward
+        while (true) {
           const checkDateStr = checkDate.toISOString().split('T')[0];
           
-          if (entryDate === checkDateStr) {
+          if (completedDates.has(checkDateStr)) {
             currentStreak++;
             checkDate.setDate(checkDate.getDate() - 1);
           } else {
@@ -77,6 +77,7 @@ export class HabitAnalyticsService {
         const firstDate = new Date(Math.min(...entries.map(e => new Date(e.entry_date).getTime())));
         const lastDate = new Date();
         
+        // Process dates in chronological order to find longest streak
         for (let date = new Date(firstDate); date <= lastDate; date.setDate(date.getDate() + 1)) {
           const dateStr = date.toISOString().split('T')[0];
           
@@ -88,6 +89,8 @@ export class HabitAnalyticsService {
           }
         }
       }
+      
+      console.log(`Streak calculation for habit ${habitId}: current=${currentStreak}, longest=${longestStreak}, entries=${entries.length}`);
 
       const lastCompletedDate = entries.length > 0 ? new Date(entries[0].entry_date) : undefined;
 
@@ -143,9 +146,6 @@ export class HabitAnalyticsService {
       const completionRate = recentEntries.length > 0 ? recentCompletions / 30 : 0;
 
       // Last seven days completion
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
       const lastSevenDays: boolean[] = [];
       for (let i = 6; i >= 0; i--) {
         const checkDate = new Date();
@@ -155,6 +155,8 @@ export class HabitAnalyticsService {
         const completed = completedEntries.some(e => e.entry_date === checkDateStr);
         lastSevenDays.push(completed);
       }
+      
+      console.log(`Last 7 days for habit ${habitId}:`, lastSevenDays, 'Completed entries:', completedEntries.length);
 
       // Average completions per week
       const weeksOfData = entries && entries.length > 0 ? 
