@@ -24,9 +24,12 @@
       "infoPlist": {
         "NSCameraUsageDescription": "This app does not use the camera.",
         "NSLocationWhenInUseUsageDescription": "This app does not use location.",
-        "NSMicrophoneUsageDescription": "This app does not use the microphone."
+        "NSMicrophoneUsageDescription": "This app does not use the microphone.",
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:habitos.app"],
+      "associatedDomains": [
+        "applinks:habitos.app"
+      ],
       "config": {
         "googleMapsApiKey": ""
       }
@@ -55,7 +58,10 @@
               "host": "habitos.app"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -68,19 +74,17 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
           "color": "#8B7355",
-          "defaultChannel": "default",
-          "sounds": ["./assets/sounds/notification.wav"]
-        }
-      ],
-      [
-        "expo-font",
-        {
-          "fonts": ["./assets/fonts/Inter-Regular.ttf", "./assets/fonts/Inter-Medium.ttf", "./assets/fonts/Inter-SemiBold.ttf", "./assets/fonts/Inter-Bold.ttf"]
+          "defaultChannel": "default"
         }
       ]
     ],
-    "scheme": "habitos"
+    "scheme": "habitos",
+    "extra": {
+      "eas": {
+        "projectId": "12ffa894-5368-49f1-9ca2-b86ad907a0f3"
+      }
+    },
+    "owner": "ruairikeane"
   }
 }

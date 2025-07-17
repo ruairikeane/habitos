@@ -311,8 +311,8 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
                 {monthlyData.length > 0 ? monthlyData.slice(-6).map((month, index) => {
                   const isCurrentMonth = month.month === new Date().getMonth() + 1 && month.year === new Date().getFullYear();
                   // Since completions is now percentage (0-100), we can use it directly with a max of 100
-                  const maxHeight = 55; // Max height in pixels
-                  const height = Math.min(Math.max((month.completions / 100) * maxHeight, 8), maxHeight);
+                  const maxHeight = 75; // Increased max height from 55px to 75px
+                  const height = Math.min(Math.max((month.completions / 100) * maxHeight, 12), maxHeight);
                   
                   return (
                     <View key={`${month.year}-${month.month}`} style={styles.chartMonth}>
@@ -500,28 +500,28 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   trendCard: {
-    gap: -4, // Negative gap to bring text closer to month labels
+    gap: -8, // Negative gap to bring text closer to month labels
   },
   trendChart: {
-    height: 140, // Increased to accommodate percentage labels
+    height: 160, // Increased to accommodate larger bars and percentage labels
   },
   chartBars: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    height: 80, // Keep bar area height
+    height: 100, // Increased bar area height
     marginBottom: 0, // Remove margin below bars
-    marginTop: 25, // Push bars down from top of container
+    marginTop: 20, // Reduced margin from top
   },
   chartMonth: {
     alignItems: 'center',
-    gap: 2, // Minimal gap (2px) between bar and labels
+    gap: 4, // Slightly more gap for better spacing
   },
   chartBar: {
-    width: 16,
+    width: 24, // Increased from 16px to 24px
     backgroundColor: colors.textSecondary,
-    borderRadius: 8,
-    minHeight: 8,
+    borderRadius: 10, // Slightly increased border radius
+    minHeight: 12, // Increased minimum height
   },
   monthLabel: {
     color: colors.textSecondary,
