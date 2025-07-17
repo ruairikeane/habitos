@@ -1,0 +1,35 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.enable": true,
+  "eslint.workingDirectories": ["./"],
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.expo": true,
+    "**/dist": true,
+    "**/web-build": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.expo": true,
+    "**/dist": true,
+    "**/web-build": true
+  },
+  "files.associations": {
+    "*.json": "jsonc"
+  },
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  }
+}

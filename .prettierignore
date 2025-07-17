@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.config.js
+package-lock.json
+yarn.lock
+.env
+.env.local
+.env.*.local
+coverage/
+build/
+.git/
+.DS_Store
+*.log

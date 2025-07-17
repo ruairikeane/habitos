@@ -1,0 +1,64 @@
+{
+  "name": "habitos",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --tunnel",
+    "android": "expo start --android --tunnel",
+    "ios": "expo start --ios --tunnel",
+    "web": "expo start --web",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "validate": "npm run typecheck && npm run lint && npm run format:check",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-navigation/bottom-tabs": "^7.4.2",
+    "@react-navigation/native": "^7.1.14",
+    "@react-navigation/native-stack": "^7.3.21",
+    "@supabase/supabase-js": "^2.50.5",
+    "expo": "~53.0.17",
+    "expo-crypto": "~14.1.5",
+    "expo-font": "^13.3.2",
+    "expo-haptics": "^14.1.4",
+    "expo-notifications": "^0.31.4",
+    "expo-secure-store": "~14.2.3",
+    "expo-status-bar": "~2.2.3",
+    "firebase": "^11.10.0",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-elements": "^3.4.3",
+    "react-native-safe-area-context": "^5.4.0",
+    "react-native-screens": "^4.11.1",
+    "react-native-svg": "^15.11.2",
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-vector-icons": "^10.2.0",
+    "stream-browserify": "^3.0.0",
+    "victory-native": "^41.17.4",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@types/react": "~19.0.10",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "typescript": "~5.8.3"
+  },
+  "private": true
+}

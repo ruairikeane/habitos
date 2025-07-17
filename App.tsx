@@ -1,0 +1,43 @@
+import 'react-native-url-polyfill/auto';
+import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { AppNavigator } from '@/navigation';
+import { AuthWrapper } from '@/components/auth/AuthWrapper';
+import { ErrorBoundary } from '@/components/common';
+import { isSupabaseConfigured } from '@/services/supabase';
+import { useNotifications } from '@/hooks';
+
+export default function App() {
+  const { requestPermissions } = useNotifications();
+  
+  useEffect(() => {
+    // Request notification permissions when app starts
+    const initializeNotifications = async () => {
+      try {
+        const granted = await requestPermissions();
+        console.log('Notification permissions granted:', granted);
+      } catch (error) {
+        console.log('Notification permission request failed:', error);
+      }
+    };
+
+    initializeNotifications();
+  }, [requestPermissions]);
+
+  console.log('Supabase configured:', isSupabaseConfigured());
+  
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('App Error:', error);
+        console.error('Error Info:', errorInfo);
+        // In production, you would send this to crash reporting service
+      }}
+    >
+      <AuthWrapper>
+        <AppNavigator />
+      </AuthWrapper>
+      <StatusBar style="auto" />
+    </ErrorBoundary>
+  );
+}

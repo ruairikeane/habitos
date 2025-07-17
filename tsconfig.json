@@ -1,0 +1,62 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@/components": [
+        "src/components"
+      ],
+      "@/screens": [
+        "src/screens"
+      ],
+      "@/navigation": [
+        "src/navigation"
+      ],
+      "@/store": [
+        "src/store"
+      ],
+      "@/services": [
+        "src/services"
+      ],
+      "@/hooks": [
+        "src/hooks"
+      ],
+      "@/types": [
+        "src/types"
+      ],
+      "@/utils": [
+        "src/utils"
+      ],
+      "@/styles": [
+        "src/styles"
+      ]
+    },
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es6"
+    ],
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "exactOptionalPropertyTypes": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": false,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}
