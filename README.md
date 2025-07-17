@@ -39,7 +39,7 @@ Habitos is a production-ready habit tracking mobile app that helps users build s
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/habitos.git
+   git clone https://github.com/ruairikeane/habitos.git
    cd habitos
    ```
 
@@ -69,6 +69,7 @@ Habitos is a production-ready habit tracking mobile app that helps users build s
 - **🏠 Home Tab**: Today's habits, daily tips, and quick completion
 - **📝 Habits Tab**: Full habit management with search and filtering
 - **📊 Statistics Tab**: Progress visualization and analytics
+- **💡 Tips Tab**: Habit formation science and educational content
 - **⚙️ Settings Tab**: Preferences, tips library, and data management
 
 ### Technical Architecture
@@ -280,8 +281,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - 📧 Email: support@habitos.app
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/habitos/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/habitos/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/ruairikeane/habitos/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/ruairikeane/habitos/discussions)
 
 ---
 
