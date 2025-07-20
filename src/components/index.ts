@@ -2,4 +2,4 @@
 export * from './common';
 export * from './habit';
 export * from './charts';
-export * from './auth/AuthWrapper';
+export * from './auth/FirebaseAuthWrapper';

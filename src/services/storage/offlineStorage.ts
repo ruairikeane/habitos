@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Habit, HabitEntry, Category, HabitWithCategory } from '@/types';
 import { HabitFrequency } from '@/types';
+import { FileBackupService } from './fileBackupService';
+import { getTodayLocalDate } from '@/utils/dateHelpers';
 
 interface OfflineData {
   habits: HabitWithCategory[];
@@ -178,6 +180,9 @@ export class OfflineStorageService {
       console.log('OfflineStorageService: Saving data to AsyncStorage');
       await AsyncStorage.setItem(this.OFFLINE_DATA_KEY, JSON.stringify(data));
       console.log('OfflineStorageService: Data saved successfully');
+      
+      // Create automatic file backup after saving
+      await FileBackupService.createAutoBackup();
     } catch (error) {
       console.error('OfflineStorageService: Failed to save offline data:', error);
     }
@@ -201,7 +206,7 @@ export class OfflineStorageService {
       }
       
       const updatedData = { ...currentData, ...updates };
-      await this.saveOfflineData(updatedData);
+      await this.saveOfflineData(updatedData); // This will trigger auto backup
     } catch (error) {
       console.error('OfflineStorageService: Failed to update offline data:', error);
     }
@@ -372,7 +377,7 @@ export class OfflineStorageService {
     }
     
     const currentData = JSON.parse(dataString);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocalDate();
     
     return currentData.habitEntries.filter((entry: HabitEntry) => entry.entry_date === today);
   }

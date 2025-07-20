@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { useStore } from '@/store';
+import { useScrollToTop } from '@/navigation/TabNavigator';
 import type { HabitsScreenProps } from '@/types';
 
 export function HabitsScreen({ navigation }: HabitsScreenProps) {
@@ -24,6 +25,15 @@ export function HabitsScreen({ navigation }: HabitsScreenProps) {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Register scroll function for tab navigation
+  useScrollToTop('Habits', () => {
+    console.log('🔝 HabitsScreen: Scrolling to top');
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  });
 
   useEffect(() => {
     console.log('HabitsScreen: useEffect triggered');
@@ -139,7 +149,7 @@ export function HabitsScreen({ navigation }: HabitsScreenProps) {
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['left', 'right']}>
-      <ScrollView style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
+      <ScrollView ref={scrollViewRef} style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
         {/* Search and Filter Section */}
         <View style={styles.searchSection}>
           <View style={styles.searchBar}>

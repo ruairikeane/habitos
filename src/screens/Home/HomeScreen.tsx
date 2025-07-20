@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, globalStyles, spacing } from '@/styles';
@@ -6,6 +6,8 @@ import { useStore } from '@/store';
 import { EXTENDED_HABIT_TIPS } from '@/services/defaultData';
 import { AnimatedCheckbox, StreakCelebration } from '@/components/common';
 import { useDateTracker } from '@/hooks';
+import { getTodayLocalDate } from '@/utils/dateHelpers';
+import { useScrollToTop } from '@/navigation/TabNavigator';
 import type { HomeScreenProps } from '@/types';
 
 export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScreenProps) {
@@ -28,13 +30,42 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
   
   // Track date changes for midnight reset
   const { currentDate, hasDateChanged, resetDateChange } = useDateTracker();
+  
+  // Debug: Track changes to today's entries
+  useEffect(() => {
+    console.log('\n🔄 === TODAY\'S ENTRIES CHANGED ===');
+    console.log('New todaysEntries count:', todaysEntries.length);
+    if (todaysEntries.length > 0) {
+      console.log('Updated entries:');
+      todaysEntries.forEach((entry, index) => {
+        console.log(`  ${index + 1}. Habit: ${entry.habit_id} | Date: ${entry.entry_date} | Completed: ${entry.is_completed}`);
+      });
+    }
+    console.log('🔄 === ENTRIES UPDATE COMPLETE ===\n');
+  }, [todaysEntries]);
+  
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
+    console.log('\n🏠 === HOME SCREEN MOUNTING ===');
     console.log('HomeScreen: Loading habits and today\'s entries...');
     const loadData = async () => {
       await loadHabits();
       await loadTodaysEntries();
-      console.log('HomeScreen: Loaded', habits.length, 'habits and', todaysEntries.length, 'entries');
+      console.log('\n📊 HOME SCREEN DATA LOADED:');
+      console.log('  - Habits:', habits.length);
+      console.log('  - Today\'s entries:', todaysEntries.length);
+      console.log('  - Today\'s date:', getTodayLocalDate());
+      
+      if (todaysEntries.length > 0) {
+        console.log('\n📅 TODAY\'S ENTRIES DETAILS:');
+        todaysEntries.forEach((entry, index) => {
+          console.log(`  ${index + 1}. Habit: ${entry.habit_id} | Date: ${entry.entry_date} | Completed: ${entry.is_completed}`);
+        });
+      } else {
+        console.log('\n⚠️ NO TODAY\'S ENTRIES FOUND');
+      }
     };
     loadData();
   }, []);
@@ -44,6 +75,12 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
     const tipIndex = new Date().getDate() % EXTENDED_HABIT_TIPS.length;
     setCurrentTip(tipIndex);
   }, []);
+
+  // Register scroll function for tab navigation
+  useScrollToTop('Home', () => {
+    console.log('🔝 HomeScreen: Scrolling to top');
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  });
 
   // Handle midnight reset - reload data when date changes
   useEffect(() => {
@@ -73,14 +110,40 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
   const today = currentDate;
 
   const getHabitCompletion = (habitId: string) => {
-    return todaysEntries.find(entry => 
+    const entry = todaysEntries.find(entry => 
       entry.habit_id === habitId && entry.entry_date === today
-    )?.is_completed || false;
+    );
+    const isCompleted = entry?.is_completed || false;
+    
+    // Debug logging for completion state
+    if (habitId) {
+      console.log(`HomeScreen: getHabitCompletion(${habitId})`);
+      console.log('  - Today\'s date:', today);
+      console.log('  - Total today\'s entries:', todaysEntries.length);
+      console.log('  - Entry found:', entry ? 'YES' : 'NO');
+      console.log('  - Is completed:', isCompleted);
+      
+      if (todaysEntries.length > 0) {
+        console.log('  - All entries for today:');
+        todaysEntries.forEach((e, index) => {
+          console.log(`    ${index + 1}. Habit: ${e.habit_id} | Date: ${e.entry_date} | Completed: ${e.is_completed}`);
+        });
+      }
+    }
+    
+    return isCompleted;
   };
 
   const handleToggleHabit = useCallback(async (habitId: string) => {
     const wasCompleted = getHabitCompletion(habitId);
+    console.log('\n🏠 HomeScreen: Toggling habit', habitId, 'from', wasCompleted, 'to', !wasCompleted);
+    
     await toggleHabitCompletion(habitId, today);
+    
+    // 🔄 CRITICAL FIX: Reload today's entries to refresh the HomeScreen
+    console.log('🏠 HomeScreen: Reloading today\'s entries after toggle...');
+    await loadTodaysEntries();
+    console.log('🏠 HomeScreen: Today\'s entries reloaded');
     
     // Show celebration if habit was just completed and has a streak
     if (!wasCompleted) {
@@ -92,7 +155,7 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
         }
       }, 300); // Small delay to let the streak update
     }
-  }, [getHabitCompletion, toggleHabitCompletion, today, habitStreaks]);
+  }, [getHabitCompletion, toggleHabitCompletion, today, habitStreaks, loadTodaysEntries]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -130,7 +193,7 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
           setCelebrationStreak(null);
         }}
       />
-      <ScrollView style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
+      <ScrollView ref={scrollViewRef} style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
         {/* Daily Greeting */}
         <View style={styles.greetingSection}>
           <Text style={[typography.h3, styles.greeting]}>
@@ -179,6 +242,10 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
               const streak = habitStreaks.get(habit.id);
               const stats = habitStats.get(habit.id);
               
+              // Extra debug for habit rendering
+              console.log(`HomeScreen: Rendering habit ${habit.name} (${habit.id}) - isCompleted: ${isCompleted}`);
+              console.log('Habit object:', { id: habit.id, name: habit.name, color: habit.color, category: habit.category });
+              
               return (
                 <TouchableOpacity 
                   key={habit.id}
@@ -189,7 +256,7 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
                   <View style={styles.habitRow}>
                     <AnimatedCheckbox
                       isCompleted={isCompleted}
-                      color={habit.color}
+                      color={habit.category.color}
                       onToggle={() => handleToggleHabit(habit.id)}
                     />
                     <View style={styles.habitInfo}>

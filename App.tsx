@@ -2,9 +2,8 @@ import 'react-native-url-polyfill/auto';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { AppNavigator } from '@/navigation';
-import { AuthWrapper } from '@/components/auth/AuthWrapper';
+import { FirebaseAuthWrapper } from '@/components/auth/FirebaseAuthWrapper';
 import { ErrorBoundary } from '@/components/common';
-import { isSupabaseConfigured } from '@/services/supabase';
 import { useNotifications } from '@/hooks';
 
 export default function App() {
@@ -24,8 +23,6 @@ export default function App() {
     initializeNotifications();
   }, [requestPermissions]);
 
-  console.log('Supabase configured:', isSupabaseConfigured());
-  
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
@@ -34,9 +31,9 @@ export default function App() {
         // In production, you would send this to crash reporting service
       }}
     >
-      <AuthWrapper>
+      <FirebaseAuthWrapper>
         <AppNavigator />
-      </AuthWrapper>
+      </FirebaseAuthWrapper>
       <StatusBar style="auto" />
     </ErrorBoundary>
   );

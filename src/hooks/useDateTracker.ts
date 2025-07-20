@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getTodayLocalDate } from '@/utils/dateHelpers';
 
 interface DateTrackerResult {
   currentDate: string;
@@ -8,16 +9,16 @@ interface DateTrackerResult {
 
 export function useDateTracker(): DateTrackerResult {
   const [currentDate, setCurrentDate] = useState(() => 
-    new Date().toISOString().split('T')[0]
+    getTodayLocalDate()
   );
   const [hasDateChanged, setHasDateChanged] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastKnownDateRef = useRef(currentDate);
 
   useEffect(() => {
-    // Check for date change every minute
+    // Check for date change every minute (using local timezone)
     intervalRef.current = setInterval(() => {
-      const newDate = new Date().toISOString().split('T')[0];
+      const newDate = getTodayLocalDate();
       
       if (newDate !== lastKnownDateRef.current) {
         console.log('Date changed detected:', lastKnownDateRef.current, '->', newDate);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,18 +6,43 @@ import Svg, { Circle } from 'react-native-svg';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { useStore } from '@/store';
 import { HabitAnalyticsService } from '@/services/analytics';
-import { supabase } from '@/services/supabase';
+import { useScrollToTop } from '@/navigation/TabNavigator';
 import type { StatisticsScreenProps } from '@/types';
 
-export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenProps) {
-  const { habits, categories, habitStats, habitStreaks } = useStore();
+export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
+  const { habits, categories, habitStats, habitStreaks, loadAllHabitsStats } = useStore();
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [overallProgress, setOverallProgress] = useState<any>(null);
+  const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Register scroll function for tab navigation
+  useScrollToTop('Statistics', () => {
+    console.log('🔝 StatisticsScreen: Scrolling to top');
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  });
 
   useEffect(() => {
     loadAnalyticsData();
   }, [habits]);
+
+  // Load habit stats when component mounts or habits change
+  useEffect(() => {
+    if (habits.length > 0) {
+      console.log('StatisticsScreen: Loading habit stats for', habits.length, 'habits');
+      loadAllHabitsStats();
+    }
+  }, [habits, loadAllHabitsStats]);
+
+  // Recalculate category stats when habitStats change
+  useEffect(() => {
+    console.log('StatisticsScreen: HabitStats changed, recalculating category stats');
+    const newCategoryStats = getCategoryStats();
+    setCategoryStats(newCategoryStats);
+  }, [habitStats, habits, categories]);
 
   const loadAnalyticsData = async () => {
     if (habits.length === 0) {
@@ -118,31 +143,45 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
   };
 
   const getCategoryStats = () => {
+    console.log('StatisticsScreen: Calculating category stats');
+    console.log('- Categories:', categories.length);
+    console.log('- Habits:', habits.length);
+    console.log('- HabitStats size:', habitStats.size);
+    
     const categoryMap = new Map();
     
     categories.forEach(category => {
       const categoryHabits = habits.filter(h => h.category_id === category.id);
+      console.log(`- Category ${category.name}: ${categoryHabits.length} habits`);
+      
       if (categoryHabits.length === 0) return;
       
       const categoryProgress = categoryHabits.reduce((sum, habit) => {
         const stats = habitStats.get(habit.id);
-        return sum + (stats?.monthlyProgress || 0);
+        const progress = stats?.monthlyProgress || 0;
+        console.log(`  - Habit ${habit.name}: ${Math.round(progress * 100)}% monthly progress`);
+        return sum + progress;
       }, 0) / categoryHabits.length;
+      
+      const progressPercentage = Math.round(categoryProgress * 100);
+      console.log(`- Category ${category.name} total progress: ${progressPercentage}%`);
       
       categoryMap.set(category.id, {
         name: category.name,
         color: category.color,
-        progress: Math.round(categoryProgress * 100)
+        progress: progressPercentage
       });
     });
     
-    return Array.from(categoryMap.values()).sort((a, b) => b.progress - a.progress);
+    const result = Array.from(categoryMap.values()).sort((a, b) => b.progress - a.progress);
+    console.log('StatisticsScreen: Final category stats:', result);
+    return result;
   };
 
   const handleExportData = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      // Export data functionality - can be implemented later
+      console.log('Export data functionality not yet implemented for Firebase');
 
       // This is a simplified export - in a real app you'd generate CSV/JSON
       const exportData = {
@@ -181,12 +220,11 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
     );
   }
 
-  const categoryStats = getCategoryStats();
   const monthlyProgressPercent = calculateOverallMonthlyProgress();
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['left', 'right']}>
-      <ScrollView style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
+      <ScrollView ref={scrollViewRef} style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
         {/* Monthly Progress Overview */}
         <View style={styles.section}>
           <Text style={[typography.h4, styles.sectionTitle]}>
@@ -311,7 +349,7 @@ export function StatisticsScreen({ navigation: _navigation }: StatisticsScreenPr
                 {monthlyData.length > 0 ? monthlyData.slice(-6).map((month, index) => {
                   const isCurrentMonth = month.month === new Date().getMonth() + 1 && month.year === new Date().getFullYear();
                   // Since completions is now percentage (0-100), we can use it directly with a max of 100
-                  const maxHeight = 55; // Max height in pixels
+                  const maxHeight = 80; // Increased max height for taller bars
                   const height = Math.min(Math.max((month.completions / 100) * maxHeight, 8), maxHeight);
                   
                   return (
@@ -500,7 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   trendCard: {
-    gap: -4, // Negative gap to bring text closer to month labels
+    gap: -12, // More negative gap to bring progress bars closer to completion label
   },
   trendChart: {
     height: 140, // Increased to accommodate percentage labels
@@ -509,7 +547,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    height: 80, // Keep bar area height
+    height: 100, // Increased height to accommodate taller bars
     marginBottom: 0, // Remove margin below bars
     marginTop: 25, // Push bars down from top of container
   },

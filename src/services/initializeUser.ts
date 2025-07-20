@@ -1,21 +1,18 @@
-import { supabase } from '@/services/supabase';
+import { FirebaseDatabaseService } from '@/services/firebase';
 import { DEFAULT_CATEGORIES } from '@/services/defaultData';
 
 export async function initializeNewUser(userId: string) {
   try {
-    // Create default categories for the new user
-    const categoriesWithUserId = DEFAULT_CATEGORIES.map(category => ({
-      ...category,
-      user_id: userId,
-    }));
-
-    const { error } = await supabase
-      .from('categories')
-      .insert(categoriesWithUserId);
-
-    if (error) {
-      console.error('Error creating default categories:', error);
-      return false;
+    console.log('Initializing new user with default categories:', userId);
+    
+    // Create default categories for the new user in Firebase
+    for (const categoryData of DEFAULT_CATEGORIES) {
+      try {
+        await FirebaseDatabaseService.createCategory(userId, categoryData);
+        console.log('Created default category:', categoryData.name);
+      } catch (error) {
+        console.error('Error creating category:', categoryData.name, error);
+      }
     }
 
     console.log('Default categories created for user:', userId);

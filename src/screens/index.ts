@@ -1,5 +1,4 @@
 // Main screens barrel export
-export * from './Auth';
 export * from './Home';
 export * from './Habits';
 export * from './HabitDetail';

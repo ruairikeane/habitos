@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { Animated, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing } from '@/styles';
 
 interface AnimatedCheckboxProps {
@@ -10,61 +9,25 @@ interface AnimatedCheckboxProps {
   size?: number;
 }
 
-export const AnimatedCheckbox = React.memo(function AnimatedCheckbox({ 
+export function AnimatedCheckbox({ 
   isCompleted, 
   color, 
   onToggle, 
   size = 24 
 }: AnimatedCheckboxProps) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const fadeAnim = useRef(new Animated.Value(isCompleted ? 1 : 0)).current;
+  
+  // DEBUG: Log every render with prop values
+  console.log('🔴 AnimatedCheckbox render:', { isCompleted, color });
 
-  useEffect(() => {
-    if (isCompleted) {
-      // Success animation: scale up briefly then back down
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Fade in checkmark
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-
-      // Haptic feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else {
-      // Fade out checkmark
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-
-      // Light haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, [isCompleted]);
-
-  const handlePress = useCallback((event: any) => {
+  const handlePress = (event: any) => {
     event.stopPropagation();
+    console.log('🔴 AnimatedCheckbox: Button pressed, current state:', isCompleted);
     onToggle();
-  }, [onToggle]);
+  };
 
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
-      <Animated.View
+      <View
         style={[
           styles.checkbox,
           {
@@ -73,19 +36,18 @@ export const AnimatedCheckbox = React.memo(function AnimatedCheckbox({
             borderRadius: size / 2,
             borderColor: color,
             backgroundColor: isCompleted ? color : 'transparent',
-            transform: [{ scale: scaleAnim }],
           },
         ]}
       >
-        <Animated.View style={{ opacity: fadeAnim }}>
+        {isCompleted && (
           <Text style={[styles.checkmark, { fontSize: size * 0.5 }]}>
             ✓
           </Text>
-        </Animated.View>
-      </Animated.View>
+        )}
+      </View>
     </TouchableOpacity>
   );
-});
+}
 
 const styles = StyleSheet.create({
   checkbox: {

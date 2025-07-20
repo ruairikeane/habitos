@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { EXTENDED_HABIT_TIPS, STACKING_TEMPLATES } from '@/services/defaultData';
+import { useScrollToTop } from '@/navigation/TabNavigator';
 import type { TipsScreenProps } from '@/types';
 
 export function TipsScreen({ navigation }: TipsScreenProps) {
   const [activeSection, setActiveSection] = useState<'tips' | 'stacking' | 'science'>('tips');
+  
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Register scroll function for tab navigation
+  useScrollToTop('Tips', () => {
+    console.log('🔝 TipsScreen: Scrolling to top');
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  });
 
   // Define earth-tone colors for each tip
   const tipColors = [
@@ -206,7 +216,7 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
+      <ScrollView ref={scrollViewRef} style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
         {activeSection === 'tips' && renderTips()}
         {activeSection === 'stacking' && renderStacking()}
         {activeSection === 'science' && renderScience()}

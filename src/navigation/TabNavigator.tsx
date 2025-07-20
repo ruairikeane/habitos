@@ -1,8 +1,30 @@
-// React import not needed for this file
+import React, { createContext, useContext, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '@/styles';
 import type { TabParamList } from '@/types';
+
+// Create context for scroll refs
+export const ScrollToTopContext = createContext<{
+  scrollRefs: React.MutableRefObject<Record<string, () => void>>;
+}>({
+  scrollRefs: { current: {} }
+});
+
+// Custom hook to register scroll functions
+export const useScrollToTop = (tabName: string, scrollFunction: () => void) => {
+  const { scrollRefs } = useContext(ScrollToTopContext);
+  
+  React.useEffect(() => {
+    console.log(`📝 Registering scroll function for ${tabName}`);
+    scrollRefs.current[tabName] = scrollFunction;
+    
+    return () => {
+      console.log(`🗑️ Unregistering scroll function for ${tabName}`);
+      delete scrollRefs.current[tabName];
+    };
+  }, [tabName, scrollFunction, scrollRefs]);
+};
 
 // Import screens
 import { HomeScreen } from '@/screens/Home/HomeScreen';
@@ -14,8 +36,11 @@ import { SettingsScreen } from '@/screens/Settings/SettingsScreen';
 const Tab = createBottomTabNavigator<TabParamList>();
 
 export function TabNavigator() {
+  const scrollRefs = useRef<Record<string, () => void>>({});
+
   return (
-    <Tab.Navigator
+    <ScrollToTopContext.Provider value={{ scrollRefs }}>
+      <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
@@ -76,6 +101,22 @@ export function TabNavigator() {
           title: 'Today',
           headerTitle: 'Today\'s Habits',
         }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const currentTabRoute = state.routes[state.index];
+            if (currentTabRoute.name === route.name) {
+              console.log(`🔝 Tab press detected on current tab: ${route.name}`);
+              const scrollToTop = scrollRefs.current[route.name];
+              if (scrollToTop) {
+                console.log(`🔝 Executing scroll for ${route.name}`);
+                scrollToTop();
+              } else {
+                console.log(`🔝 No scroll function registered for ${route.name}`);
+              }
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="Habits"
@@ -84,6 +125,22 @@ export function TabNavigator() {
           title: 'Habits',
           headerTitle: 'My Habits',
         }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const currentTabRoute = state.routes[state.index];
+            if (currentTabRoute.name === route.name) {
+              console.log(`🔝 Tab press detected on current tab: ${route.name}`);
+              const scrollToTop = scrollRefs.current[route.name];
+              if (scrollToTop) {
+                console.log(`🔝 Executing scroll for ${route.name}`);
+                scrollToTop();
+              } else {
+                console.log(`🔝 No scroll function registered for ${route.name}`);
+              }
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="Statistics"
@@ -92,6 +149,22 @@ export function TabNavigator() {
           title: 'Stats',
           headerTitle: 'Progress & Insights',
         }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const currentTabRoute = state.routes[state.index];
+            if (currentTabRoute.name === route.name) {
+              console.log(`🔝 Tab press detected on current tab: ${route.name}`);
+              const scrollToTop = scrollRefs.current[route.name];
+              if (scrollToTop) {
+                console.log(`🔝 Executing scroll for ${route.name}`);
+                scrollToTop();
+              } else {
+                console.log(`🔝 No scroll function registered for ${route.name}`);
+              }
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="Tips"
@@ -100,6 +173,22 @@ export function TabNavigator() {
           title: 'Tips',
           headerTitle: 'Habit Tips & Science',
         }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const currentTabRoute = state.routes[state.index];
+            if (currentTabRoute.name === route.name) {
+              console.log(`🔝 Tab press detected on current tab: ${route.name}`);
+              const scrollToTop = scrollRefs.current[route.name];
+              if (scrollToTop) {
+                console.log(`🔝 Executing scroll for ${route.name}`);
+                scrollToTop();
+              } else {
+                console.log(`🔝 No scroll function registered for ${route.name}`);
+              }
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="Settings"
@@ -108,7 +197,24 @@ export function TabNavigator() {
           title: 'Settings',
           headerTitle: 'Settings',
         }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const currentTabRoute = state.routes[state.index];
+            if (currentTabRoute.name === route.name) {
+              console.log(`🔝 Tab press detected on current tab: ${route.name}`);
+              const scrollToTop = scrollRefs.current[route.name];
+              if (scrollToTop) {
+                console.log(`🔝 Executing scroll for ${route.name}`);
+                scrollToTop();
+              } else {
+                console.log(`🔝 No scroll function registered for ${route.name}`);
+              }
+            }
+          },
+        })}
       />
     </Tab.Navigator>
+    </ScrollToTopContext.Provider>
   );
 }

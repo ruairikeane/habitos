@@ -7,9 +7,11 @@ import type { RootStackParamList } from '@/types';
 import { TabNavigator } from './TabNavigator';
 import { AddHabitScreen, HabitDetailScreen, EditHabitScreen } from '@/screens';
 import { NotificationSettingsScreen } from '@/screens/Settings/NotificationSettingsScreen';
+import { BiometricSettingsScreen } from '@/screens/Settings/BiometricSettingsScreen';
 import { TipsLibraryScreen } from '@/screens/Settings/TipsLibraryScreen';
 import { AppearanceScreen } from '@/screens/Settings/AppearanceScreen';
 import { DataBackupScreen } from '@/screens/Settings/DataBackupScreen';
+import { BackupManagementScreen } from '@/screens/Settings/BackupManagementScreen';
 import { ProfileScreen } from '@/screens/Settings/ProfileScreen';
 import { HelpSupportScreen } from '@/screens/Settings/HelpSupportScreen';
 import { AboutScreen } from '@/screens/Settings/AboutScreen';
@@ -51,6 +53,13 @@ export function AppNavigator() {
         <Stack.Screen
           name="NotificationSettings"
           component={NotificationSettingsScreen}
+          options={{
+            headerShown: false, // We'll use custom header in the screen
+          }}
+        />
+        <Stack.Screen
+          name="BiometricSettings"
+          component={BiometricSettingsScreen}
           options={{
             headerShown: false, // We'll use custom header in the screen
           }}
@@ -100,6 +109,13 @@ export function AppNavigator() {
         <Stack.Screen
           name="DataBackup"
           component={DataBackupScreen}
+          options={{
+            headerShown: false, // Using custom header in the screen
+          }}
+        />
+        <Stack.Screen
+          name="BackupManagement"
+          component={BackupManagementScreen}
           options={{
             headerShown: false, // Using custom header in the screen
           }}

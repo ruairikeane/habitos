@@ -1,7 +1,6 @@
 // Services exports
-export * from './supabase';
-export * from './auth';
+export * from './firebase';
 export * from './analytics';
 export * from './storage/offlineStorage';
-export * from './sync/syncService';
+export * from './biometric';
 export * from './initializeUser';

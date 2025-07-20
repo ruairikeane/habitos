@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { useStore } from '@/store';
 import { OfflineStorageService } from '@/services/storage/offlineStorage';
+import { FileBackupService } from '@/services/storage/fileBackupService';
 import type { DataBackupScreenProps } from '@/types';
 
 export function DataBackupScreen({ navigation }: DataBackupScreenProps) {
@@ -245,6 +246,26 @@ export function DataBackupScreen({ navigation }: DataBackupScreenProps) {
                   </Text>
                   <Text style={[typography.caption, styles.actionDescription]}>
                     Restore from a backup file
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[globalStyles.card, styles.actionCard]}
+            onPress={() => navigation.navigate('BackupManagement')}
+          >
+            <View style={styles.actionContent}>
+              <View style={styles.actionLeft}>
+                <Ionicons name="archive-outline" size={24} color={colors.warning} />
+                <View style={styles.actionText}>
+                  <Text style={[typography.bodyMedium, styles.actionTitle]}>
+                    Manage Backups
+                  </Text>
+                  <Text style={[typography.caption, styles.actionDescription]}>
+                    View and restore automatic backups
                   </Text>
                 </View>
               </View>

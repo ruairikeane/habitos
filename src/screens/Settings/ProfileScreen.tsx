@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { useStore } from '@/store';
 import type { ProfileScreenProps } from '@/types';
 
 export function ProfileScreen({ navigation }: ProfileScreenProps) {
-  const { habits, habitStats, habitStreaks, resetApp } = useStore();
+  const { habits, habitStats, habitStreaks, resetApp, backupToFirebase } = useStore();
   const [profileStats, setProfileStats] = useState({
     totalHabits: 0,
     totalCompletions: 0,
@@ -21,6 +22,28 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
   useEffect(() => {
     calculateProfileStats();
   }, [habits, habitStats, habitStreaks]);
+
+  // Auto-backup on first load (one-time)
+  useEffect(() => {
+    const performBackup = async () => {
+      // Check if backup has already been done
+      const hasBackedUp = await AsyncStorage.getItem('firebase_backup_complete');
+      if (!hasBackedUp && habits.length > 0) {
+        console.log('ProfileScreen: Auto-triggering Firebase backup');
+        try {
+          const result = await backupToFirebase();
+          if (result.success) {
+            console.log('ProfileScreen: Auto-backup successful');
+            await AsyncStorage.setItem('firebase_backup_complete', 'true');
+          }
+        } catch (error) {
+          console.error('ProfileScreen: Auto-backup failed:', error);
+        }
+      }
+    };
+    
+    performBackup();
+  }, [habits, backupToFirebase]);
 
   const calculateProfileStats = () => {
     const totalHabits = habits.length;
@@ -90,26 +113,98 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
     return { level: "Starter", icon: "leaf", color: colors.health };
   };
 
+  const handleBackupToFirebase = async () => {
+    Alert.alert(
+      'Backup to Firebase',
+      'This will save all your habits and categories to Firebase cloud storage.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Backup Now', 
+          style: 'default',
+          onPress: async () => {
+            try {
+              const result = await backupToFirebase();
+              if (result.success) {
+                Alert.alert(
+                  'Backup Successful!',
+                  `Backed up ${result.habitsCount} habits and ${result.categoriesCount} categories to Firebase.`,
+                  [{ text: 'OK', style: 'default' }]
+                );
+              } else {
+                Alert.alert(
+                  'Backup Failed',
+                  result.error || 'Unknown error occurred during backup.',
+                  [{ text: 'OK', style: 'default' }]
+                );
+              }
+            } catch (error) {
+              Alert.alert(
+                'Backup Error',
+                'An unexpected error occurred during backup.',
+                [{ text: 'OK', style: 'default' }]
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleResetApp = () => {
+    // First confirmation - Warning
     Alert.alert(
       'Reset App Data',
       'This will permanently delete all your habits, entries, and progress. This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Reset Everything', 
+          text: 'Continue', 
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await resetApp();
-              Alert.alert(
-                'App Reset',
-                'All data has been cleared. You can now start fresh!',
-                [{ text: 'OK', onPress: () => navigation.navigate('Main') }]
-              );
-            } catch (error) {
-              Alert.alert('Error', 'Failed to reset app. Please try again.');
-            }
+          onPress: () => {
+            // Second confirmation - Type to confirm
+            Alert.prompt(
+              'Are you absolutely sure?',
+              'Type "DELETE ALL DATA" to confirm this permanent action:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Reset', 
+                  style: 'destructive',
+                  onPress: async (inputText) => {
+                    if (inputText === 'DELETE ALL DATA') {
+                      // Third confirmation - Final warning
+                      Alert.alert(
+                        'Final Warning',
+                        'You are about to permanently delete all your habit data. This cannot be undone. Are you absolutely certain?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Yes, Delete Everything', 
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                await resetApp();
+                                Alert.alert(
+                                  'App Reset',
+                                  'All data has been cleared. You can now start fresh!',
+                                  [{ text: 'OK', onPress: () => navigation.navigate('Main') }]
+                                );
+                              } catch (error) {
+                                Alert.alert('Error', 'Failed to reset app. Please try again.');
+                              }
+                            }
+                          }
+                        ]
+                      );
+                    } else {
+                      Alert.alert('Cancelled', 'Text did not match. Reset cancelled.');
+                    }
+                  }
+                }
+              ],
+              'plain-text'
+            );
           }
         }
       ]

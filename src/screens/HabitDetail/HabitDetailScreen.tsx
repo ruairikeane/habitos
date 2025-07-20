@@ -4,12 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { useStore } from '@/store';
 import { HabitAnalyticsService } from '@/services/analytics';
+import { FirebaseAuthService, FirebaseDatabaseService } from '@/services/firebase';
+import { getTodayLocalDate, getLocalDateString } from '@/utils/dateHelpers';
 import type { HabitDetailScreenProps } from '@/types';
 import type { HabitEntry } from '@/types';
 
 export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps) {
   const { habitId } = route.params;
-  const { habits, habitStats, habitStreaks, toggleHabitCompletion } = useStore();
+  const { habits, habitStats, habitStreaks, toggleHabitCompletion, loadHabitStats, loadHabitStreaks } = useStore();
   
   const [calendarEntries, setCalendarEntries] = useState<HabitEntry[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -22,38 +24,81 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
   useEffect(() => {
     if (!habit) return;
     loadCalendarData();
-  }, [habit, selectedMonth]);
+    // Load stats and streaks for this habit
+    loadHabitStats(habitId);
+    loadHabitStreaks(habitId);
+  }, [habit, selectedMonth, habitId, loadHabitStats, loadHabitStreaks]);
 
   const loadCalendarData = async () => {
     if (!habit) return;
     
     setIsLoading(true);
     try {
-      console.log('HabitDetailScreen: Loading calendar data for offline mode');
-      const startDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1)
-        .toISOString().split('T')[0];
-      const endDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0)
-        .toISOString().split('T')[0];
+      console.log('\n📅 === LOADING CALENDAR DATA ===');
+      const startDate = getLocalDateString(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1));
+      const endDate = getLocalDateString(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0));
+      console.log('HabitDetailScreen: Date range:', startDate, 'to', endDate);
 
-      // Load offline data instead of using Supabase
-      const { OfflineStorageService } = await import('@/services/storage/offlineStorage');
-      const offlineData = await OfflineStorageService.loadOfflineData();
+      // Check if we're in Firebase-only mode
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+      const firebaseOnlyMode = await AsyncStorage.getItem('firebase_only_mode');
       
-      // Filter entries for this habit within the date range
-      const entries = offlineData.habitEntries.filter(entry => {
-        return entry.habit_id === habitId && 
-               entry.entry_date >= startDate && 
-               entry.entry_date <= endDate;
-      });
+      console.log('HabitDetailScreen: Firebase-only mode:', firebaseOnlyMode === 'true' ? 'ENABLED' : 'DISABLED');
       
-      console.log('HabitDetailScreen: Found', entries.length, 'entries for calendar');
-      setCalendarEntries(entries);
+      const currentUser = await FirebaseAuthService.getCurrentUser();
+      
+      if (currentUser && firebaseOnlyMode === 'true') {
+        // Use Firebase data (consistent with rest of app after migration)
+        console.log('🔥 Using Firebase for calendar data (post-migration)');
+        const entries = await HabitAnalyticsService.getHabitEntriesInRange(
+          habitId,
+          currentUser.uid,
+          startDate,
+          endDate
+        );
+        console.log('HabitDetailScreen: Found', entries.length, 'Firebase entries for calendar');
+        
+        // Debug: Show what entries we found
+        if (entries.length > 0) {
+          console.log('📝 Calendar entries found:');
+          entries.forEach((entry, index) => {
+            console.log(`  ${index + 1}. ${entry.entry_date}: ${entry.is_completed ? '✅ COMPLETED' : '❌ Not completed'}`);
+          });
+        } else {
+          console.log('⚠️ No calendar entries found for this month');
+        }
+        
+        setCalendarEntries(entries);
+      } else if (currentUser) {
+        // Use Firebase but not in Firebase-only mode yet
+        console.log('🔥 Using Firebase for calendar data (regular mode)');
+        const entries = await FirebaseDatabaseService.getHabitEntries(currentUser.uid, habitId);
+        const filteredEntries = entries.filter(entry => 
+          entry.entry_date >= startDate && entry.entry_date <= endDate
+        );
+        console.log('HabitDetailScreen: Found', filteredEntries.length, 'Firebase entries for calendar');
+        setCalendarEntries(filteredEntries);
+      } else {
+        // Fallback to offline data
+        console.log('⚠️ No user, using offline data for calendar');
+        const { OfflineStorageService } = await import('@/services/storage/offlineStorage');
+        const offlineData = await OfflineStorageService.loadOfflineData();
+        const entries = offlineData.habitEntries.filter(entry => {
+          return entry.habit_id === habitId && 
+                 entry.entry_date >= startDate && 
+                 entry.entry_date <= endDate;
+        });
+        console.log('HabitDetailScreen: Found', entries.length, 'offline entries for calendar');
+        setCalendarEntries(entries);
+      }
     } catch (error) {
-      console.error('Error loading calendar data:', error);
+      console.error('❌ Error loading calendar data:', error);
       setCalendarEntries([]);
     } finally {
       setIsLoading(false);
     }
+    
+    console.log('📅 === CALENDAR DATA LOADING COMPLETE ===\n');
   };
 
   const renderCalendar = () => {
@@ -76,7 +121,7 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const entry = calendarEntries.find(e => e.entry_date === dateStr);
       const isCompleted = entry?.is_completed || false;
-      const isToday = dateStr === new Date().toISOString().split('T')[0];
+      const isToday = dateStr === getTodayLocalDate();
 
       days.push(
         <TouchableOpacity
@@ -116,8 +161,64 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
   const handleDayPress = async (date: string) => {
     if (!habit) return;
     
-    await toggleHabitCompletion(habitId, date);
-    loadCalendarData(); // Refresh calendar
+    console.log('\n✅ === CALENDAR DAY PRESSED ===');
+    console.log('HabitDetail: Date selected:', date);
+    
+    // 🚀 OPTIMISTIC UPDATE: Update calendar immediately
+    setCalendarEntries(prevEntries => {
+      const existingEntry = prevEntries.find(e => e.entry_date === date);
+      console.log('Existing entry for', date, ':', existingEntry ? 'YES' : 'NO');
+      
+      if (existingEntry) {
+        // Toggle existing entry
+        const newState = !existingEntry.is_completed;
+        console.log('Toggling calendar entry from', existingEntry.is_completed, 'to', newState);
+        return prevEntries.map(entry => 
+          entry.entry_date === date 
+            ? { ...entry, is_completed: newState }
+            : entry
+        );
+      } else {
+        // Create new completed entry
+        console.log('Creating new completed calendar entry for', date);
+        const newEntry: HabitEntry = {
+          id: `temp_${Date.now()}`,
+          habit_id: habitId,
+          entry_date: date,
+          is_completed: true,
+          user_id: 'temp',
+          created_at: new Date().toISOString()
+        };
+        return [...prevEntries, newEntry];
+      }
+    });
+    
+    // 🔄 Background sync with same store function
+    try {
+      console.log('HabitDetail: Syncing with store toggleHabitCompletion...');
+      await toggleHabitCompletion(habitId, date);
+      console.log('✅ HabitDetail: Store sync completed successfully');
+      
+      // Reload calendar data to ensure consistency with Firebase
+      console.log('🔄 Reloading calendar data to sync with Firebase...');
+      await loadCalendarData();
+      
+      // Also update the today's entries in the store to keep everything in sync
+      if (date === getTodayLocalDate()) {
+        console.log('📅 This is today, refreshing today\'s entries in store...');
+        const { useStore } = await import('@/store');
+        useStore.getState().loadTodaysEntries();
+      }
+      
+      console.log('✅ Calendar sync complete');
+    } catch (error) {
+      console.error('❌ HabitDetail: Error toggling completion:', error);
+      // Revert optimistic update on error by reloading real data
+      console.log('🔄 Error occurred, reverting calendar to real data...');
+      loadCalendarData();
+    }
+    
+    console.log('✅ === CALENDAR DAY PRESS COMPLETE ===\n');
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -217,9 +318,9 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
         </View>
 
         {/* Last 7 Days Progress */}
-        {stats && (
-          <View style={[globalStyles.card, styles.recentProgressCard]}>
-            <Text style={[typography.h4, styles.sectionTitle]}>Last 7 Days</Text>
+        <View style={[globalStyles.card, styles.recentProgressCard]}>
+          <Text style={[typography.h4, styles.sectionTitle]}>Last 7 Days</Text>
+          {stats && stats.lastSevenDays ? (
             <View style={styles.weekProgress}>
               {stats.lastSevenDays.map((completed, index) => {
                 const date = new Date();
@@ -229,7 +330,7 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
                     <View style={[
                       styles.dayProgressIndicator,
                       completed && styles.dayProgressCompleted,
-                      { backgroundColor: completed ? habit.color : colors.border }
+                      { backgroundColor: completed ? habit.category.color : colors.border }
                     ]} />
                     <Text style={styles.dayProgressLabel}>
                       {date.toLocaleDateString('en-US', { weekday: 'short' })}
@@ -238,8 +339,14 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
                 );
               })}
             </View>
-          </View>
-        )}
+          ) : (
+            <View style={styles.weekProgress}>
+              <Text style={[typography.bodySmall, { color: colors.textSecondary, textAlign: 'center', width: '100%' }]}>
+                {stats ? 'No completion data available' : 'Loading stats...'}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Habit Details */}
         <View style={[globalStyles.card, styles.detailsCard]}>

@@ -45,16 +45,25 @@ export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
 
   useEffect(() => {
     console.log('AddHabitScreen: Loading categories...');
+    console.log('AddHabitScreen: Current categories in store:', categories.length);
+    
     const loadData = async () => {
       try {
         await loadCategories();
-        console.log('AddHabitScreen: Loaded', categories.length, 'categories');
+        console.log('AddHabitScreen: After load - categories in store:', categories.length);
+        console.log('AddHabitScreen: Category details:', categories.map(c => ({ id: c.id, name: c.name })));
       } catch (error) {
         console.error('AddHabitScreen: Error loading categories:', error);
       }
     };
-    loadData();
-  }, []);
+    
+    // Only load if categories are empty
+    if (categories.length === 0) {
+      loadData();
+    } else {
+      console.log('AddHabitScreen: Categories already loaded:', categories.length);
+    }
+  }, [categories.length, loadCategories]);
 
   const handleSuggestionSelect = (suggestion: typeof HABIT_SUGGESTIONS[0]) => {
     setHabitName(suggestion.name);
@@ -84,7 +93,6 @@ export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
         ...(description.trim() ? { description: description.trim() } : {}),
         category_id: selectedCategory,
         frequency,
-        color: categories.find(cat => cat.id === selectedCategory)?.color || colors.primary,
         icon: 'checkmark-circle',
         ...(habitStacking.trim() ? { habit_stacking: habitStacking.trim() } : {}),
         ...(implementationIntention.trim() ? { implementation_intention: implementationIntention.trim() } : {}),
@@ -199,37 +207,49 @@ export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
 
         {/* Category Selection */}
         <View style={styles.section}>
-          <Text style={[typography.h5, styles.sectionTitle]}>
-            Category *
-          </Text>
-          <View style={styles.categoryGrid}>
-            {categories.length === 0 ? (
-              <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>
-                Loading categories... ({categories.length} found)
+          <View style={styles.sectionHeader}>
+            <Text style={[typography.h5, styles.sectionTitle]}>
+              Category *
+            </Text>
+            {categories.length > 0 && (
+              <Text style={[typography.caption, styles.categoryCount]}>
+                {categories.length} available
               </Text>
-            ) : null}
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryCard,
-                  selectedCategory === category.id && styles.categoryCardSelected
-                ]}
-                onPress={() => setSelectedCategory(category.id)}
-              >
-                <View style={[
-                  styles.categoryDot,
-                  { backgroundColor: category.color }
-                ]} />
-                <Text style={[
-                  typography.bodySmall,
-                  styles.categoryName,
-                  selectedCategory === category.id && styles.categoryNameSelected
-                ]}>
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            )}
+          </View>
+          <View style={styles.categoryGrid}>
+            {categories.length === 0 && (
+              <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>
+                Loading categories...
+              </Text>
+            )}
+            {/* Filter out any potential duplicates by unique ID */}
+            {categories
+              .filter((category, index, self) => 
+                index === self.findIndex(c => c.id === category.id)
+              )
+              .map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryCard,
+                    selectedCategory === category.id && styles.categoryCardSelected
+                  ]}
+                  onPress={() => setSelectedCategory(category.id)}
+                >
+                  <View style={[
+                    styles.categoryDot,
+                    { backgroundColor: category.color }
+                  ]} />
+                  <Text style={[
+                    typography.bodySmall,
+                    styles.categoryName,
+                    selectedCategory === category.id && styles.categoryNameSelected
+                  ]}>
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
           </View>
         </View>
 
@@ -248,11 +268,16 @@ export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
                 ]}
                 onPress={() => setFrequency(freq)}
               >
-                <Text style={[
-                  typography.bodyMedium,
-                  styles.frequencyText,
-                  frequency === freq && styles.frequencyTextSelected
-                ]}>
+                <Text 
+                  style={[
+                    typography.bodyMedium,
+                    styles.frequencyText,
+                    frequency === freq && styles.frequencyTextSelected
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.8}
+                >
                   {freq.charAt(0).toUpperCase() + freq.slice(1)}
                 </Text>
               </TouchableOpacity>
@@ -413,8 +438,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   sectionTitle: {
     color: colors.textPrimary,
+  },
+  categoryCount: {
+    color: colors.textSecondary,
   },
   sectionDescription: {
     color: colors.textSecondary,
@@ -492,8 +525,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
-    padding: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
     alignItems: 'center',
+    minHeight: 44,
   },
   frequencyButtonSelected: {
     backgroundColor: colors.primary,
@@ -501,10 +536,12 @@ const styles = StyleSheet.create({
   },
   frequencyText: {
     color: colors.textSecondary,
+    textAlign: 'center',
   },
   frequencyTextSelected: {
     color: colors.surface,
     fontWeight: '600',
+    textAlign: 'center',
   },
   templatesContainer: {
     gap: spacing.xs,
