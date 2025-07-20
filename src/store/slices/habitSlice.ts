@@ -663,38 +663,76 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
       }
       
       const currentHabits = get().habits;
+      const currentCategories = get().categories;
       console.log('🎨 Checking', currentHabits.length, 'habits for color issues');
+      console.log('📁 Available categories:', currentCategories.map(c => `${c.name}: ${c.color}`));
       
       let updatedCount = 0;
       
       for (const habit of currentHabits) {
-        // Check if habit has a legacy color property that conflicts with category color
-        if (habit.hasOwnProperty('color') && habit.color !== habit.category.color) {
-          console.log(`🔧 Fixing color for habit "${habit.name}"`);
-          console.log(`   Old color: ${habit.color} | Category color: ${habit.category.color}`);
-          
+        console.log(`\n🔍 Checking habit: "${habit.name}"`);
+        console.log(`   Category: ${habit.category.name} (${habit.category.color})`);
+        console.log(`   Habit has color property: ${habit.hasOwnProperty('color') ? habit.color : 'NO'}`);
+        
+        let needsUpdate = false;
+        const updateData = { ...habit };
+        
+        // Check 1: Remove any legacy color property on the habit
+        if (habit.hasOwnProperty('color')) {
+          console.log(`   🧹 Removing legacy color property: ${habit.color}`);
+          delete updateData.color;
+          needsUpdate = true;
+        }
+        
+        // Check 2: Ensure category color is correct (Learning should be #8FA4B2)
+        if (habit.category.name === 'Learning' && habit.category.color !== '#8FA4B2') {
+          console.log(`   🔧 Learning category has wrong color: ${habit.category.color} should be #8FA4B2`);
+          // This would require updating the category itself, not the habit
+          console.log(`   ⚠️ Need to fix Learning category color in database`);
+        }
+        
+        if (needsUpdate) {
           try {
-            // Update habit in Firebase to remove the color property
-            const updateData = { ...habit };
-            delete updateData.color; // Remove the legacy color property
-            
+            console.log(`   🔄 Updating habit "${habit.name}" in Firebase...`);
             await FirebaseDatabaseService.updateHabit(habit.id, updateData);
             updatedCount++;
-            console.log(`   ✅ Fixed color for "${habit.name}"`);
+            console.log(`   ✅ Fixed habit "${habit.name}"`);
           } catch (error) {
-            console.error(`   ❌ Failed to fix color for "${habit.name}":`, error);
+            console.error(`   ❌ Failed to fix habit "${habit.name}":`, error);
           }
+        } else {
+          console.log(`   ✅ Habit "${habit.name}" already correct`);
+        }
+      }
+      
+      // Check for Learning category color specifically
+      const learningCategory = currentCategories.find(c => c.name === 'Learning');
+      if (learningCategory && learningCategory.color !== '#8FA4B2') {
+        console.log(`\n🔧 FIXING LEARNING CATEGORY COLOR`);
+        console.log(`   Current: ${learningCategory.color}`);
+        console.log(`   Should be: #8FA4B2`);
+        
+        try {
+          await FirebaseDatabaseService.updateCategory(learningCategory.id, { 
+            ...learningCategory, 
+            color: '#8FA4B2' 
+          });
+          console.log(`   ✅ Fixed Learning category color`);
+          updatedCount++;
+        } catch (error) {
+          console.error(`   ❌ Failed to fix Learning category:`, error);
         }
       }
       
       if (updatedCount > 0) {
-        // Reload habits to reflect changes
-        console.log('🔄 Reloading habits after color fixes...');
+        // Reload both habits and categories to reflect changes
+        console.log('🔄 Reloading habits and categories after color fixes...');
+        await get().loadCategories();
         await get().loadHabits();
       }
       
       console.log('🎨 === HABIT COLOR FIX COMPLETE ===');
-      console.log(`📊 Updated ${updatedCount} habits`);
+      console.log(`📊 Updated ${updatedCount} items`);
       
       return {
         success: true,

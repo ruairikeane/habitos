@@ -93,6 +93,26 @@ export class FirebaseDatabaseService {
     }
   }
 
+  static async updateCategory(categoryId: string, updates: Partial<Category>): Promise<void> {
+    try {
+      if (!firestore) {
+        throw new Error('Firebase not initialized');
+      }
+
+      const categoryRef = doc(firestore, COLLECTIONS.CATEGORIES, categoryId);
+      const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now()
+      };
+      
+      await updateDoc(categoryRef, updateData);
+      console.log(`Firebase: Updated category ${categoryId}`, updates);
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw new Error(handleFirebaseError(error));
+    }
+  }
+
   /**
    * Habits
    */
