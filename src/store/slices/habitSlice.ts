@@ -41,6 +41,7 @@ export interface HabitSlice {
   completeDataMigration: () => Promise<{ success: boolean; error?: string; categoriesMigrated?: number; habitsMigrated?: number; entriesMigrated?: number; finalHabitsCount?: number }>;
   debugState: () => void;
   oneTimeLearningFix: () => Promise<void>;
+  comprehensiveCategoryDebug: () => Promise<{ success: boolean; debugInfo: any; fixes?: any; error?: string }>;
 }
 
 export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
@@ -1274,6 +1275,310 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
       console.log('✅ Learning category should now be #8FA4B2');
     } catch (error) {
       console.error('❌ One-time Learning fix failed:', error);
+    }
+  },
+
+  // COMPREHENSIVE CATEGORY DEBUGGING AND FIX FUNCTION
+  comprehensiveCategoryDebug: async () => {
+    console.log('\n🔍 === COMPREHENSIVE CATEGORY DEBUGGING ===');
+    
+    try {
+      const currentUser = await FirebaseAuthService.getCurrentUser();
+      if (!currentUser) {
+        console.error('❌ No authenticated user found');
+        return { success: false, debugInfo: null, error: 'No authenticated user' };
+      }
+      
+      console.log('👤 Debugging for user:', currentUser.uid);
+      
+      // Step 1: Get fresh data from Firebase
+      console.log('\n📦 STEP 1: Loading fresh data from Firebase...');
+      const firebaseCategories = await FirebaseDatabaseService.getCategories(currentUser.uid);
+      const firebaseHabits = await FirebaseDatabaseService.getHabits(currentUser.uid);
+      
+      console.log('📊 Firebase data loaded:');
+      console.log(`   Categories: ${firebaseCategories.length}`);
+      console.log(`   Habits: ${firebaseHabits.length}`);
+      
+      // Step 2: Analyze categories
+      console.log('\n📁 STEP 2: Category Analysis...');
+      console.log('All categories in Firebase:');
+      const categoryMap = new Map();
+      firebaseCategories.forEach((cat, index) => {
+        console.log(`  ${index + 1}. "${cat.name}" | Color: ${cat.color} | ID: ${cat.id}`);
+        categoryMap.set(cat.id, cat);
+      });
+      
+      // Check for Learning category specifically
+      const learningCategories = firebaseCategories.filter(c => 
+        c.name.toLowerCase() === 'learning'
+      );
+      console.log(`\n📚 Learning categories found: ${learningCategories.length}`);
+      
+      if (learningCategories.length === 0) {
+        console.log('❌ NO LEARNING CATEGORY FOUND - This is likely the problem!');
+      } else {
+        learningCategories.forEach((cat, index) => {
+          console.log(`  ${index + 1}. ID: ${cat.id} | Color: ${cat.color} | Name: "${cat.name}"`);
+          if (cat.color !== '#8FA4B2') {
+            console.log(`     ⚠️  WRONG COLOR: Expected #8FA4B2, got ${cat.color}`);
+          } else {
+            console.log(`     ✅ Correct color: ${cat.color}`);
+          }
+        });
+      }
+      
+      // Step 3: Analyze habits and their category references
+      console.log('\n🎯 STEP 3: Habit Category Analysis...');
+      const habitIssues = [];
+      const learningHabits = [];
+      
+      firebaseHabits.forEach((habit, index) => {
+        console.log(`\n${index + 1}. Habit: "${habit.name}"`);
+        console.log(`   Category ID: ${habit.category_id}`);
+        console.log(`   Category Name: ${habit.category.name}`);
+        console.log(`   Category Color: ${habit.category.color}`);
+        
+        // Check if category ID exists in Firebase
+        const actualCategory = categoryMap.get(habit.category_id);
+        if (!actualCategory) {
+          console.log(`   ❌ INVALID CATEGORY ID: ${habit.category_id} not found in Firebase!`);
+          habitIssues.push({
+            habitId: habit.id,
+            habitName: habit.name,
+            issue: 'invalid_category_id',
+            invalidCategoryId: habit.category_id,
+            embeddedCategory: habit.category
+          });
+        } else {
+          console.log(`   ✅ Valid category ID exists in Firebase`);
+          
+          // Check if embedded category data matches Firebase category
+          if (actualCategory.name !== habit.category.name) {
+            console.log(`   ⚠️  NAME MISMATCH: Firebase="${actualCategory.name}", Embedded="${habit.category.name}"`);
+            habitIssues.push({
+              habitId: habit.id,
+              habitName: habit.name,
+              issue: 'category_name_mismatch',
+              firebaseCategory: actualCategory,
+              embeddedCategory: habit.category
+            });
+          }
+          
+          if (actualCategory.color !== habit.category.color) {
+            console.log(`   ⚠️  COLOR MISMATCH: Firebase="${actualCategory.color}", Embedded="${habit.category.color}"`);
+            habitIssues.push({
+              habitId: habit.id,
+              habitName: habit.name,
+              issue: 'category_color_mismatch',
+              firebaseCategory: actualCategory,
+              embeddedCategory: habit.category
+            });
+          }
+        }
+        
+        // Collect Learning habits
+        if (habit.category.name.toLowerCase() === 'learning') {
+          learningHabits.push(habit);
+        }
+      });
+      
+      console.log(`\n📋 ANALYSIS SUMMARY:`);
+      console.log(`   Total habits analyzed: ${firebaseHabits.length}`);
+      console.log(`   Habits with issues: ${habitIssues.length}`);
+      console.log(`   Learning habits found: ${learningHabits.length}`);
+      
+      // Step 4: Detailed issue reporting
+      console.log('\n🚨 STEP 4: Issue Details...');
+      if (habitIssues.length > 0) {
+        console.log('Issues found:');
+        habitIssues.forEach((issue, index) => {
+          console.log(`\n  ${index + 1}. "${issue.habitName}" (${issue.habitId})`);
+          console.log(`     Issue: ${issue.issue}`);
+          if (issue.invalidCategoryId) {
+            console.log(`     Invalid Category ID: ${issue.invalidCategoryId}`);
+            console.log(`     Embedded Category: ${JSON.stringify(issue.embeddedCategory, null, 2)}`);
+          }
+          if (issue.firebaseCategory && issue.embeddedCategory) {
+            console.log(`     Firebase Category: ${JSON.stringify(issue.firebaseCategory, null, 2)}`);
+            console.log(`     Embedded Category: ${JSON.stringify(issue.embeddedCategory, null, 2)}`);
+          }
+        });
+      } else {
+        console.log('✅ No habit category issues found!');
+      }
+      
+      // Step 5: Learning habits specific analysis
+      console.log('\n📚 STEP 5: Learning Habits Analysis...');
+      if (learningHabits.length > 0) {
+        console.log('Learning habits details:');
+        learningHabits.forEach((habit, index) => {
+          console.log(`\n  ${index + 1}. "${habit.name}"`);
+          console.log(`     Habit ID: ${habit.id}`);
+          console.log(`     Category ID: ${habit.category_id}`);
+          console.log(`     Category Name: ${habit.category.name}`);
+          console.log(`     Category Color: ${habit.category.color}`);
+          console.log(`     Expected Color: #8FA4B2`);
+          console.log(`     Color Match: ${habit.category.color === '#8FA4B2' ? '✅' : '❌'}`);
+        });
+      } else {
+        console.log('⚠️  No Learning habits found');
+      }
+      
+      // Prepare debug info object
+      const debugInfo = {
+        userId: currentUser.uid,
+        categories: firebaseCategories.map(c => ({
+          id: c.id,
+          name: c.name,
+          color: c.color,
+          icon: c.icon
+        })),
+        habits: firebaseHabits.map(h => ({
+          id: h.id,
+          name: h.name,
+          categoryId: h.category_id,
+          embeddedCategory: h.category
+        })),
+        learningCategories: learningCategories,
+        learningHabits: learningHabits.map(h => ({
+          id: h.id,
+          name: h.name,
+          categoryId: h.category_id,
+          categoryColor: h.category.color
+        })),
+        issues: habitIssues,
+        summary: {
+          totalCategories: firebaseCategories.length,
+          totalHabits: firebaseHabits.length,
+          learningCategoriesCount: learningCategories.length,
+          learningHabitsCount: learningHabits.length,
+          issuesFound: habitIssues.length
+        }
+      };
+      
+      // Step 6: Auto-fix common issues
+      console.log('\n🔧 STEP 6: Attempting auto-fixes...');
+      const fixes = {
+        learningCategoryFixed: false,
+        habitCategoryLinksFixed: 0,
+        newLearningCategoryCreated: false
+      };
+      
+      // Fix 1: Ensure Learning category exists and has correct color
+      if (learningCategories.length === 0) {
+        console.log('🔧 Creating missing Learning category...');
+        try {
+          const newLearningCategory = await FirebaseDatabaseService.createCategory(currentUser.uid, {
+            name: 'Learning',
+            color: '#8FA4B2',
+            icon: 'book'
+          });
+          console.log('✅ Created Learning category:', newLearningCategory.id);
+          fixes.newLearningCategoryCreated = true;
+          fixes.learningCategoryFixed = true;
+        } catch (error) {
+          console.error('❌ Failed to create Learning category:', error);
+        }
+      } else {
+        // Fix existing Learning category color
+        for (const learningCat of learningCategories) {
+          if (learningCat.color !== '#8FA4B2') {
+            console.log(`🔧 Fixing Learning category color: ${learningCat.color} -> #8FA4B2`);
+            try {
+              await FirebaseDatabaseService.updateCategory(learningCat.id, {
+                color: '#8FA4B2'
+              });
+              console.log('✅ Fixed Learning category color');
+              fixes.learningCategoryFixed = true;
+            } catch (error) {
+              console.error('❌ Failed to fix Learning category color:', error);
+            }
+          }
+        }
+      }
+      
+      // Fix 2: Fix habits with invalid category IDs
+      const invalidCategoryHabits = habitIssues.filter(issue => issue.issue === 'invalid_category_id');
+      for (const issue of invalidCategoryHabits) {
+        console.log(`🔧 Fixing invalid category ID for habit "${issue.habitName}"`);
+        
+        // Special case: Detect if this is a Learning habit based on name
+        const habitName = issue.habitName.toLowerCase();
+        const isLearningHabit = habitName.includes('study') || 
+                               habitName.includes('learn') || 
+                               habitName.includes('flashcard') || 
+                               habitName.includes('language') ||
+                               habitName.includes('read') ||
+                               habitName.includes('book');
+        
+        let targetCategory = null;
+        
+        // If it's a Learning habit, use the Learning category
+        if (isLearningHabit) {
+          targetCategory = firebaseCategories.find(cat => cat.name.toLowerCase() === 'learning');
+          if (targetCategory) {
+            console.log(`   🎯 Detected Learning habit - using Learning category: ${targetCategory.name} (${targetCategory.id})`);
+          }
+        }
+        
+        // Fallback: Try to find a matching category by name
+        if (!targetCategory) {
+          targetCategory = firebaseCategories.find(cat => 
+            cat.name.toLowerCase() === issue.embeddedCategory.name.toLowerCase()
+          );
+        }
+        
+        if (targetCategory) {
+          console.log(`   Found target category: ${targetCategory.name} (${targetCategory.id})`);
+          try {
+            await FirebaseDatabaseService.updateHabit(issue.habitId, {
+              category_id: targetCategory.id
+            });
+            console.log(`   ✅ Fixed category link for "${issue.habitName}"`);
+            fixes.habitCategoryLinksFixed++;
+          } catch (error) {
+            console.error(`   ❌ Failed to fix category link for "${issue.habitName}":`, error);
+          }
+        } else {
+          console.log(`   ⚠️  No matching category found for "${issue.embeddedCategory.name}"`);
+        }
+      }
+      
+      // Step 7: Reload data after fixes
+      if (fixes.learningCategoryFixed || fixes.habitCategoryLinksFixed > 0 || fixes.newLearningCategoryCreated) {
+        console.log('\n🔄 STEP 7: Reloading data after fixes...');
+        await get().loadCategories();
+        await get().loadHabits();
+        await get().loadTodaysEntries();
+        console.log('✅ Data reloaded');
+      }
+      
+      console.log('\n🎉 === COMPREHENSIVE DEBUGGING COMPLETE ===');
+      console.log('📊 Results Summary:');
+      console.log(`   Categories analyzed: ${firebaseCategories.length}`);
+      console.log(`   Habits analyzed: ${firebaseHabits.length}`);
+      console.log(`   Issues found: ${habitIssues.length}`);
+      console.log(`   Learning categories: ${learningCategories.length}`);
+      console.log(`   Learning habits: ${learningHabits.length}`);
+      console.log('🔧 Fixes Applied:');
+      console.log(`   Learning category fixed: ${fixes.learningCategoryFixed}`);
+      console.log(`   New Learning category created: ${fixes.newLearningCategoryCreated}`);
+      console.log(`   Habit category links fixed: ${fixes.habitCategoryLinksFixed}`);
+      
+      return {
+        success: true,
+        debugInfo: debugInfo,
+        fixes: fixes
+      };
+      
+    } catch (error) {
+      console.error('❌ Comprehensive category debug failed:', error);
+      return { 
+        success: false, 
+        debugInfo: null, 
+        error: error.message 
+      };
     }
   },
 });

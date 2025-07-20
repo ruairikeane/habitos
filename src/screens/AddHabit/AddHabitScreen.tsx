@@ -29,11 +29,15 @@ const HABIT_SUGGESTIONS = [
   { name: 'Practice Gratitude', category: 'Mindfulness', icon: '🙏' },
 ];
 
-export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
+export function AddHabitScreen({ navigation, route }: AddHabitScreenProps) {
   const { categories, createHabit, loadCategories, isLoading } = useStore();
   const { scheduleHabitReminder, permissionGranted } = useNotifications();
   
-  const [habitName, setHabitName] = useState('');
+  // Check for suggested habit from navigation params
+  const suggestedName = route?.params?.suggestedName;
+  const suggestedCategory = route?.params?.suggestedCategory;
+  
+  const [habitName, setHabitName] = useState(suggestedName || '');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [frequency, setFrequency] = useState<HabitFrequency>(HabitFrequency.DAILY);
@@ -41,7 +45,7 @@ export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
   const [enableReminder, setEnableReminder] = useState(false);
   const [habitStacking, setHabitStacking] = useState('');
   const [implementationIntention, setImplementationIntention] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(!suggestedName);
 
   useEffect(() => {
     console.log('AddHabitScreen: Loading categories...');
@@ -64,6 +68,20 @@ export function AddHabitScreen({ navigation }: AddHabitScreenProps) {
       console.log('AddHabitScreen: Categories already loaded:', categories.length);
     }
   }, [categories.length, loadCategories]);
+
+  // Handle suggested category selection when categories are loaded
+  useEffect(() => {
+    if (suggestedCategory && categories.length > 0 && !selectedCategory) {
+      const category = categories.find(cat => 
+        cat.name.toLowerCase().includes(suggestedCategory.toLowerCase()) ||
+        suggestedCategory.toLowerCase().includes(cat.name.toLowerCase())
+      );
+      if (category) {
+        setSelectedCategory(category.id);
+        console.log(`Auto-selected suggested category: ${category.name} (${category.id})`);
+      }
+    }
+  }, [suggestedCategory, categories, selectedCategory]);
 
   const handleSuggestionSelect = (suggestion: typeof HABIT_SUGGESTIONS[0]) => {
     setHabitName(suggestion.name);

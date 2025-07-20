@@ -1,16 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, globalStyles, spacing } from '@/styles';
 import { EXTENDED_HABIT_TIPS, STACKING_TEMPLATES } from '@/services/defaultData';
 import { useScrollToTop } from '@/navigation/TabNavigator';
+import { useStore } from '@/store';
 import type { TipsScreenProps } from '@/types';
 
 export function TipsScreen({ navigation }: TipsScreenProps) {
-  const [activeSection, setActiveSection] = useState<'tips' | 'stacking' | 'science'>('tips');
+  const [activeSection, setActiveSection] = useState<'tips' | 'stacking' | 'suggested'>('tips');
+  const { habits, categories, isLoading, loadHabits, loadCategories } = useStore();
   
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Load user data when component mounts
+  useEffect(() => {
+    const loadData = async () => {
+      await loadHabits();
+      await loadCategories();
+    };
+    loadData();
+  }, []);
 
   // Register scroll function for tab navigation
   useScrollToTop('Tips', () => {
@@ -129,51 +141,222 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
     </View>
   );
 
-  const renderScience = () => (
-    <View style={styles.tipsContainer}>
-      <View style={[globalStyles.card, styles.scienceCard]}>
-        <Text style={[typography.h4, styles.scienceTitle]}>
-          🧠 The Science of Habits
+  // Intelligent habit suggestion logic
+  const getSuggestedHabits = () => {
+    if (!habits || habits.length === 0) {
+      // New user - suggest foundational habits
+      return [
+        { name: "Drink a glass of water when you wake up", category: "Health & Wellness", reason: "Start your day with hydration", icon: "water", color: colors.health },
+        { name: "Make your bed every morning", category: "Productivity", reason: "Begin each day with a small win", icon: "bed", color: colors.productivity },
+        { name: "Read 5 pages before bed", category: "Learning", reason: "Build a learning habit", icon: "book", color: colors.learning },
+        { name: "Take 3 deep breaths before meals", category: "Mindfulness", reason: "Practice mindful eating", icon: "leaf", color: colors.mindfulness },
+      ];
+    }
+
+    const suggestions = [];
+    const userCategories = new Set(habits.map(h => h.category.name.toLowerCase()));
+    const categoryCounts = {};
+    
+    // Count habits per category
+    habits.forEach(habit => {
+      const cat = habit.category.name;
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    });
+
+    // Suggest complementary habits based on existing patterns
+    if (userCategories.has('health & wellness') || userCategories.has('health')) {
+      if (!habits.some(h => h.name.toLowerCase().includes('walk'))) {
+        suggestions.push({ 
+          name: "Take a 10-minute walk after lunch", 
+          category: "Health & Wellness", 
+          reason: "Complement your health habits with movement", 
+          icon: "walk", 
+          color: colors.health 
+        });
+      }
+    }
+
+    if (userCategories.has('productivity')) {
+      if (!habits.some(h => h.name.toLowerCase().includes('plan') || h.name.toLowerCase().includes('schedule'))) {
+        suggestions.push({ 
+          name: "Plan tomorrow's top 3 tasks before bed", 
+          category: "Productivity", 
+          reason: "Stack with your productivity habits", 
+          icon: "list", 
+          color: colors.productivity 
+        });
+      }
+    }
+
+    if (userCategories.has('learning')) {
+      if (!habits.some(h => h.name.toLowerCase().includes('podcast') || h.name.toLowerCase().includes('listen'))) {
+        suggestions.push({ 
+          name: "Listen to a 15-minute educational podcast", 
+          category: "Learning", 
+          reason: "Expand your learning habits", 
+          icon: "headset", 
+          color: colors.learning 
+        });
+      }
+    }
+
+    if (userCategories.has('fitness')) {
+      if (!habits.some(h => h.name.toLowerCase().includes('stretch'))) {
+        suggestions.push({ 
+          name: "Do 5 minutes of stretching before bed", 
+          category: "Fitness", 
+          reason: "Perfect cooldown for your fitness routine", 
+          icon: "body", 
+          color: colors.fitness 
+        });
+      }
+    }
+
+    // Suggest missing foundational categories
+    if (!userCategories.has('mindfulness')) {
+      suggestions.push({ 
+        name: "Practice 5 minutes of deep breathing", 
+        category: "Mindfulness", 
+        reason: "Add mindfulness to balance your routine", 
+        icon: "leaf", 
+        color: colors.mindfulness 
+      });
+    }
+
+    if (!userCategories.has('personal care')) {
+      suggestions.push({ 
+        name: "Apply moisturizer after your evening routine", 
+        category: "Personal Care", 
+        reason: "Self-care enhances all other habits", 
+        icon: "heart", 
+        color: colors.personalCare 
+      });
+    }
+
+    // Advanced stacking suggestions based on existing habits
+    habits.forEach(habit => {
+      const name = habit.name.toLowerCase();
+      if (name.includes('coffee') || name.includes('breakfast')) {
+        if (!habits.some(h => h.name.toLowerCase().includes('gratitude'))) {
+          suggestions.push({ 
+            name: "Write one thing you're grateful for with morning coffee", 
+            category: "Mindfulness", 
+            reason: `Perfect to stack with "${habit.name}"`, 
+            icon: "heart", 
+            color: colors.mindfulness 
+          });
+        }
+      }
+      
+      if (name.includes('shower') || name.includes('bath')) {
+        if (!habits.some(h => h.name.toLowerCase().includes('intention'))) {
+          suggestions.push({ 
+            name: "Set a daily intention while showering", 
+            category: "Mindfulness", 
+            reason: `Use shower time from "${habit.name}" for reflection`, 
+            icon: "bulb", 
+            color: colors.mindfulness 
+          });
+        }
+      }
+    });
+
+    return suggestions.slice(0, 6); // Return top 6 suggestions
+  };
+
+  const renderSuggested = () => {
+    const suggestions = getSuggestedHabits();
+    
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[typography.bodySmall, styles.loadingText]}>
+            Analyzing your habits...
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.tipsContainer}>
+        <View style={[globalStyles.card, styles.infoCard]}>
+          <Text style={[typography.h5, styles.sectionTitle]}>
+            🎯 Personalized for You
+          </Text>
+          <Text style={[typography.body, styles.sectionContent]}>
+            {habits.length === 0 
+              ? "Start your habit journey with these foundational habits that build momentum."
+              : `Based on your ${habits.length} existing habits, here are intelligent suggestions to enhance your routine.`
+            }
+          </Text>
+        </View>
+
+        <Text style={[typography.h4, styles.templatesHeader]}>
+          Suggested Habits:
         </Text>
-        
-        <View style={styles.scienceSection}>
-          <Text style={[typography.h5, styles.scienceSubtitle]}>
-            The 66-Day Reality
-          </Text>
-          <Text style={[typography.body, styles.scienceText]}>
-            Research shows it takes an average of 66 days (not 21!) to form a habit. The range is 18-254 days depending on complexity.
-          </Text>
-        </View>
 
-        <View style={styles.scienceSection}>
-          <Text style={[typography.h5, styles.scienceSubtitle]}>
-            The Habit Loop
-          </Text>
-          <Text style={[typography.body, styles.scienceText]}>
-            Every habit follows: Cue → Routine → Reward. Understanding this loop helps you design better habits.
-          </Text>
-        </View>
+        {suggestions.map((suggestion, index) => {
+          return (
+            <TouchableOpacity 
+              key={index} 
+              style={[
+                globalStyles.card, 
+                styles.suggestionCard,
+                { 
+                  backgroundColor: suggestion.color + '10',
+                  borderLeftColor: suggestion.color,
+                }
+              ]}
+              onPress={() => navigation.navigate('AddHabit', { 
+                suggestedName: suggestion.name,
+                suggestedCategory: suggestion.category 
+              })}
+              activeOpacity={0.7}
+            >
+              <View style={styles.suggestionHeader}>
+                <View style={styles.suggestionTitleRow}>
+                  <Ionicons 
+                    name={suggestion.icon as any} 
+                    size={20} 
+                    color={suggestion.color} 
+                    style={styles.suggestionIcon}
+                  />
+                  <Text style={[typography.bodyMedium, styles.suggestionName]}>
+                    {suggestion.name}
+                  </Text>
+                </View>
+                <Ionicons name="add-circle" size={24} color={colors.primary} />
+              </View>
+              
+              <Text style={[typography.caption, styles.suggestionCategory]}>
+                {suggestion.category}
+              </Text>
+              
+              <Text style={[typography.bodySmall, styles.suggestionReason]}>
+                💡 {suggestion.reason}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
 
-        <View style={styles.scienceSection}>
-          <Text style={[typography.h5, styles.scienceSubtitle]}>
-            1% Better Daily
-          </Text>
-          <Text style={[typography.body, styles.scienceText]}>
-            Improving just 1% each day leads to 37x better results over a year through compound growth.
-          </Text>
-        </View>
-
-        <View style={styles.scienceSection}>
-          <Text style={[typography.h5, styles.scienceSubtitle]}>
-            Environment Design
-          </Text>
-          <Text style={[typography.body, styles.scienceText]}>
-            Make good habits obvious and bad habits invisible by changing your environment rather than relying on willpower.
-          </Text>
-        </View>
+        {habits.length > 0 && (
+          <View style={[globalStyles.card, styles.analysisCard]}>
+            <Text style={[typography.h5, styles.analysisTitle]}>
+              📊 Your Habit Analysis
+            </Text>
+            <Text style={[typography.body, styles.analysisText]}>
+              You have habits in {new Set(habits.map(h => h.category.name)).size} different categories. 
+              {habits.length >= 5 
+                ? " You're building a well-rounded routine! Consider habit stacking to maximize consistency."
+                : " Consider adding habits in new categories for a more balanced lifestyle."
+              }
+            </Text>
+          </View>
+        )}
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['left', 'right']}>
@@ -204,14 +387,14 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.tab, activeSection === 'science' && styles.activeTab]}
-          onPress={() => setActiveSection('science')}
+          style={[styles.tab, activeSection === 'suggested' && styles.activeTab]}
+          onPress={() => setActiveSection('suggested')}
         >
           <Text style={[
             styles.tabText,
-            activeSection === 'science' && styles.activeTabText
+            activeSection === 'suggested' && styles.activeTabText
           ]}>
-            Science
+            Suggested
           </Text>
         </TouchableOpacity>
       </View>
@@ -219,7 +402,7 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
       <ScrollView ref={scrollViewRef} style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
         {activeSection === 'tips' && renderTips()}
         {activeSection === 'stacking' && renderStacking()}
-        {activeSection === 'science' && renderScience()}
+        {activeSection === 'suggested' && renderSuggested()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -307,22 +490,6 @@ const styles = StyleSheet.create({
   exampleItem: {
     lineHeight: 20,
   },
-  scienceCard: {
-    gap: spacing.lg,
-  },
-  scienceTitle: {
-    textAlign: 'center',
-    color: colors.primary,
-  },
-  scienceSection: {
-    gap: spacing.sm,
-  },
-  scienceSubtitle: {
-    color: colors.secondary,
-  },
-  scienceText: {
-    lineHeight: 22,
-  },
   addHabitButton: {
     marginTop: spacing.lg,
     alignItems: 'center',
@@ -335,5 +502,62 @@ const styles = StyleSheet.create({
     color: colors.surface,
     opacity: 0.8,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  suggestionCard: {
+    borderLeftWidth: 4,
+    // borderLeftColor is set dynamically
+  },
+  suggestionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  suggestionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  suggestionIcon: {
+    marginRight: spacing.sm,
+  },
+  suggestionName: {
+    flex: 1,
+    color: colors.textPrimary,
+  },
+  suggestionCategory: {
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  suggestionReason: {
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  analysisCard: {
+    marginTop: spacing.md,
+    backgroundColor: colors.secondary + '10',
+    borderWidth: 1,
+    borderColor: colors.secondary + '30',
+  },
+  analysisTitle: {
+    marginBottom: spacing.sm,
+    color: colors.secondary,
+  },
+  analysisText: {
+    lineHeight: 22,
+    color: colors.textPrimary,
   },
 });

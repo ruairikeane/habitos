@@ -8,7 +8,10 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 export type RootStackParamList = {
   Main: undefined;
   HabitDetail: { habitId: string };
-  AddHabit: undefined;
+  AddHabit: {
+    suggestedName?: string;
+    suggestedCategory?: string;
+  } | undefined;
   EditHabit: { habitId: string };
   TipsLibrary: undefined;
   HabitStats: { habitId: string };

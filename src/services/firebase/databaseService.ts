@@ -143,6 +143,14 @@ export class FirebaseDatabaseService {
         
         const category = categories.find(c => c.id === habitData.categoryId);
         
+        // DEBUG: Log category lookup for troubleshooting
+        if (!category) {
+          console.log(`❌ CATEGORY NOT FOUND for habit "${habitData.name}"`);
+          console.log(`  Looking for category ID: ${habitData.categoryId}`);
+          console.log(`  Available categories:`, categories.map(c => `${c.name} (${c.id})`));
+          console.log(`  Using fallback category with color #8B7355`);
+        }
+        
         habits.push({
           id: doc.id,
           user_id: userId,

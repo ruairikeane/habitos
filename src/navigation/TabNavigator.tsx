@@ -171,7 +171,7 @@ export function TabNavigator() {
         component={TipsScreen}
         options={{
           title: 'Tips',
-          headerTitle: 'Habit Tips & Science',
+          headerTitle: 'Tips & Suggestions',
         }}
         listeners={({ navigation, route }) => ({
           tabPress: (e) => {

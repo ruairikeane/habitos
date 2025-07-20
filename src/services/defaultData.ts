@@ -140,6 +140,16 @@ export const EXTENDED_HABIT_TIPS = [
     content: "Missing once is an accident. Missing twice is the start of a new habit. Get back on track quickly.",
     category: 'motivation',
   },
+  {
+    title: "The 66-Day Reality",
+    content: "Research shows it takes an average of 66 days (not 21!) to form a habit. The range is 18-254 days depending on complexity. Be patient with yourself.",
+    category: 'psychology',
+  },
+  {
+    title: "The Habit Loop",
+    content: "Every habit follows the same pattern: Cue → Routine → Reward. Understanding this loop helps you design better habits and break bad ones.",
+    category: 'psychology',
+  },
 ];
 
 export const STACKING_TEMPLATES = [
