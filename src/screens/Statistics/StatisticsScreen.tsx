@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     gap: -12, // More negative gap to bring progress bars closer to completion label
   },
   trendChart: {
-    height: 140, // Increased to accommodate percentage labels
+    height: 160, // Increased to accommodate larger bars and percentage labels
   },
   chartBars: {
     flexDirection: 'row',
@@ -549,17 +549,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     height: 100, // Increased height to accommodate taller bars
     marginBottom: 0, // Remove margin below bars
-    marginTop: 25, // Push bars down from top of container
+    marginTop: 20, // Reduced margin from top
   },
   chartMonth: {
     alignItems: 'center',
-    gap: 2, // Minimal gap (2px) between bar and labels
+    gap: 4, // Slightly more gap for better spacing
   },
   chartBar: {
-    width: 16,
+    width: 24, // Increased from 16px to 24px
     backgroundColor: colors.textSecondary,
-    borderRadius: 8,
-    minHeight: 8,
+    borderRadius: 10, // Slightly increased border radius
+    minHeight: 12, // Increased minimum height
   },
   monthLabel: {
     color: colors.textSecondary,
