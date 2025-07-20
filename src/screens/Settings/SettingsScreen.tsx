@@ -12,7 +12,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   
   // Get store functions for debugging
-  const { completeDataMigration, debugState, resetApp, forceRefreshStreaks, categories, loadCategories, cleanupDuplicateCategories, fixHabitColors } = useStore();
+  const { completeDataMigration, debugState, resetApp, forceRefreshStreaks, categories, loadCategories, cleanupDuplicateCategories, fixHabitColors, forceLearningColor } = useStore();
   
   const handleCleanupCategories = async () => {
     try {
@@ -204,25 +204,50 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
 
           <TouchableOpacity
             style={[globalStyles.card, styles.menuItem]}
+            onPress={() => {
+              console.log('🔍 Running Learning category diagnostics...');
+              debugState();
+              Alert.alert('Debug Complete', 'Check console logs for detailed Learning category information.');
+            }}
+          >
+            <View style={styles.menuItemContent}>
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="search" size={24} color="#8FA4B2" />
+                <View style={styles.menuItemText}>
+                  <Text style={[typography.bodyMedium, styles.menuItemTitle]}>
+                    Debug Learning Category
+                  </Text>
+                  <Text style={[typography.caption, styles.menuItemDescription]}>
+                    Check what colors Learning category actually has
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[globalStyles.card, styles.menuItem]}
             onPress={async () => {
               Alert.alert(
-                'Fix Habit Colors',
-                'This will ensure all habits use their category colors correctly and fix the Learning category to show dusty blue.',
+                'FORCE Fix Learning Colors',
+                'This will aggressively force ALL Learning categories and habits to use the correct dusty blue color (#8FA4B2). This is more thorough than the regular fix.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { 
-                    text: 'Fix Colors', 
+                    text: 'FORCE Fix', 
+                    style: 'destructive',
                     onPress: async () => {
-                      console.log('🎨 Starting habit color fix from Settings...');
-                      const result = await fixHabitColors();
+                      console.log('🔧 Starting AGGRESSIVE Learning color fix...');
+                      const result = await forceLearningColor();
                       
                       if (result.success) {
                         Alert.alert(
-                          'Colors Fixed!', 
-                          `Successfully updated ${result.updatedCount} items. Learning category should now show correct dusty blue color (#8FA4B2).`
+                          'Learning Colors FORCED!', 
+                          `Aggressively updated ${result.updatedCount} items. Learning category should now definitely show dusty blue color (#8FA4B2).`
                         );
                       } else {
-                        Alert.alert('Fix Failed', result.error || 'Unknown error occurred');
+                        Alert.alert('Force Fix Failed', result.error || 'Unknown error occurred');
                       }
                     }
                   }
@@ -232,13 +257,13 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           >
             <View style={styles.menuItemContent}>
               <View style={styles.menuItemLeft}>
-                <Ionicons name="color-palette" size={24} color="#8FA4B2" />
+                <Ionicons name="hammer" size={24} color="#8FA4B2" />
                 <View style={styles.menuItemText}>
                   <Text style={[typography.bodyMedium, styles.menuItemTitle]}>
-                    Fix Learning Category Colors
+                    FORCE Fix Learning Colors
                   </Text>
                   <Text style={[typography.caption, styles.menuItemDescription]}>
-                    Ensure Learning habits show dusty blue color
+                    Aggressively force Learning to dusty blue
                   </Text>
                 </View>
               </View>

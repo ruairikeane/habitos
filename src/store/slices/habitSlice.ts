@@ -28,6 +28,7 @@ export interface HabitSlice {
   forceRefreshStreaks: () => Promise<void>;
   cleanupDuplicateCategories: () => Promise<{ success: boolean; error?: string; removedCount?: number }>;
   fixHabitColors: () => Promise<{ success: boolean; error?: string; updatedCount?: number }>;
+  forceLearningColor: () => Promise<{ success: boolean; error?: string; updatedCount?: number }>;
   createHabit: (habit: Omit<Habit, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<HabitWithCategory>;
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
@@ -745,6 +746,104 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
     }
   },
 
+  // Force Learning category to correct color - aggressive fix
+  forceLearningColor: async () => {
+    console.log('\n🔧 === FORCE LEARNING COLOR FIX ===');
+    try {
+      const currentUser = await FirebaseAuthService.getCurrentUser();
+      if (!currentUser) {
+        console.error('❌ No authenticated user found');
+        return { success: false, error: 'No authenticated user' };
+      }
+      
+      const currentCategories = get().categories;
+      const currentHabits = get().habits;
+      console.log('🔧 Starting aggressive Learning color fix...');
+      console.log('📊 Categories:', currentCategories.length, 'Habits:', currentHabits.length);
+      
+      let updatedCount = 0;
+      
+      // Step 1: Find ALL Learning categories and force them to correct color
+      const learningCategories = currentCategories.filter(c => 
+        c.name.toLowerCase().includes('learning')
+      );
+      
+      console.log(`📚 Found ${learningCategories.length} Learning categories`);
+      learningCategories.forEach((cat, index) => {
+        console.log(`  ${index + 1}. ${cat.name}: ${cat.color} (ID: ${cat.id})`);
+      });
+      
+      for (const category of learningCategories) {
+        console.log(`\n🔧 FORCING category "${category.name}" to #8FA4B2`);
+        console.log(`   Current color: ${category.color}`);
+        
+        try {
+          await FirebaseDatabaseService.updateCategory(category.id, { 
+            color: '#8FA4B2' 
+          });
+          console.log(`   ✅ Updated category "${category.name}" to #8FA4B2`);
+          updatedCount++;
+        } catch (error) {
+          console.error(`   ❌ Failed to update category "${category.name}":`, error);
+        }
+      }
+      
+      // Step 2: Find ALL Learning habits and remove any color properties
+      const learningHabits = currentHabits.filter(h => 
+        h.category.name.toLowerCase().includes('learning')
+      );
+      
+      console.log(`\n🎯 Found ${learningHabits.length} Learning habits`);
+      learningHabits.forEach((habit, index) => {
+        console.log(`  ${index + 1}. "${habit.name}" (Category: ${habit.category.name})`);
+        console.log(`     Category color: ${habit.category.color}`);
+        console.log(`     Habit has color: ${habit.hasOwnProperty('color') ? habit.color : 'NO'}`);
+      });
+      
+      for (const habit of learningHabits) {
+        let needsUpdate = false;
+        const updateData = { ...habit };
+        
+        if (habit.hasOwnProperty('color')) {
+          console.log(`\n🧹 REMOVING color property from habit "${habit.name}"`);
+          console.log(`   Removing color: ${habit.color}`);
+          delete updateData.color;
+          needsUpdate = true;
+        }
+        
+        if (needsUpdate) {
+          try {
+            await FirebaseDatabaseService.updateHabit(habit.id, updateData);
+            console.log(`   ✅ Updated habit "${habit.name}"`);
+            updatedCount++;
+          } catch (error) {
+            console.error(`   ❌ Failed to update habit "${habit.name}":`, error);
+          }
+        } else {
+          console.log(`   ✅ Habit "${habit.name}" already clean`);
+        }
+      }
+      
+      // Step 3: Force reload all data
+      console.log('\n🔄 FORCE RELOADING all data...');
+      await get().loadCategories();
+      await get().loadHabits();
+      await get().loadTodaysEntries();
+      
+      console.log('🔧 === FORCE LEARNING COLOR FIX COMPLETE ===');
+      console.log(`📊 Total updates: ${updatedCount}`);
+      
+      return {
+        success: true,
+        updatedCount: updatedCount
+      };
+      
+    } catch (error) {
+      console.error('❌ Force Learning color fix failed:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   // Create new category
   createCategory: async (categoryData) => {
     try {
@@ -788,6 +887,33 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
     console.log('Streaks Map size:', state.habitStreaks.size);
     console.log('Loading:', state.isLoading);
     console.log('Error:', state.error);
+    
+    // DEBUG: Check Learning category and habits specifically
+    console.log('\n🎨 === LEARNING CATEGORY DEBUG ===');
+    const categories = state.categories;
+    const habits = state.habits;
+    
+    console.log('📁 All categories:');
+    categories.forEach((cat, index) => {
+      console.log(`  ${index + 1}. ${cat.name}: ${cat.color} (ID: ${cat.id})`);
+    });
+    
+    const learningCategories = categories.filter(c => c.name.toLowerCase().includes('learning'));
+    console.log(`\n📚 Learning categories found: ${learningCategories.length}`);
+    learningCategories.forEach((cat, index) => {
+      console.log(`  ${index + 1}. ${cat.name}: ${cat.color} (ID: ${cat.id})`);
+    });
+    
+    const learningHabits = habits.filter(h => h.category.name.toLowerCase().includes('learning'));
+    console.log(`\n🎯 Learning habits found: ${learningHabits.length}`);
+    learningHabits.forEach((habit, index) => {
+      console.log(`  ${index + 1}. "${habit.name}"`);
+      console.log(`     Category: ${habit.category.name} (${habit.category.color})`);
+      console.log(`     Habit has color: ${habit.hasOwnProperty('color') ? habit.color : 'NO'}`);
+      console.log(`     Category ID: ${habit.category.id}`);
+    });
+    
+    console.log('🎨 === LEARNING DEBUG END ===');
     console.log('🔍 === DEBUG STATE END ===\n');
   },
 
