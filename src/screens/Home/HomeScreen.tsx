@@ -22,7 +22,7 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
     loadTodaysEntries, 
     toggleHabitCompletion,
     clearError,
-    fixHabitColors
+    oneTimeLearningFix
   } = useStore();
 
   const [currentTip, setCurrentTip] = useState(0);
@@ -67,20 +67,23 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
       } else {
         console.log('\n⚠️ NO TODAY\'S ENTRIES FOUND');
       }
+
+      // ONE-TIME LEARNING COLOR FIX
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+      const hasRunLearningFix = await AsyncStorage.getItem('learning_color_fix_completed');
       
-      // AUTO-FIX LEARNING CATEGORY COLORS
-      console.log('\n🎨 === RUNNING AUTOMATIC COLOR FIX ===');
-      try {
-        const result = await fixHabitColors();
-        if (result.success && result.updatedCount > 0) {
-          console.log(`✅ Fixed ${result.updatedCount} color issues automatically`);
-        } else {
-          console.log('✅ All habit colors already correct');
+      if (!hasRunLearningFix) {
+        console.log('\n🎯 Running one-time Learning category color fix...');
+        try {
+          await oneTimeLearningFix();
+          await AsyncStorage.setItem('learning_color_fix_completed', 'true');
+          console.log('✅ One-time Learning color fix completed and flagged');
+        } catch (error) {
+          console.error('❌ One-time Learning fix failed:', error);
         }
-      } catch (error) {
-        console.error('❌ Auto color fix failed:', error);
+      } else {
+        console.log('✅ Learning color fix already completed previously');
       }
-      console.log('🎨 === AUTO COLOR FIX COMPLETE ===\n');
     };
     loadData();
   }, []);

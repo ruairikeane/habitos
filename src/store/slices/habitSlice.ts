@@ -40,6 +40,7 @@ export interface HabitSlice {
   resetMigration: () => Promise<void>;
   completeDataMigration: () => Promise<{ success: boolean; error?: string; categoriesMigrated?: number; habitsMigrated?: number; entriesMigrated?: number; finalHabitsCount?: number }>;
   debugState: () => void;
+  oneTimeLearningFix: () => Promise<void>;
 }
 
 export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
@@ -1219,5 +1220,60 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
   resetMigration: async () => {
     console.log('⚠️  Using legacy resetMigration - recommend using completeDataMigration instead');
     return get().completeDataMigration();
+  },
+
+  // ONE-TIME FIX: Direct Learning category color correction
+  oneTimeLearningFix: async () => {
+    console.log('\n🎯 === ONE-TIME LEARNING COLOR FIX ===');
+    try {
+      const currentUser = await FirebaseAuthService.getCurrentUser();
+      if (!currentUser) {
+        console.error('❌ No authenticated user');
+        return;
+      }
+
+      // Get all categories directly from Firebase
+      const allCategories = await FirebaseDatabaseService.getCategories(currentUser.uid);
+      console.log('📁 Total categories in Firebase:', allCategories.length);
+      
+      // Find Learning categories
+      const learningCategories = allCategories.filter(cat => 
+        cat.name.toLowerCase() === 'learning'
+      );
+      console.log('📚 Learning categories found:', learningCategories.length);
+      
+      learningCategories.forEach((cat, index) => {
+        console.log(`  ${index + 1}. Learning category ID: ${cat.id}, Color: ${cat.color}`);
+      });
+
+      // Force update ALL Learning categories to correct color
+      for (const category of learningCategories) {
+        console.log(`🔧 Updating Learning category ${category.id} to #8FA4B2`);
+        await FirebaseDatabaseService.updateCategory(category.id, {
+          color: '#8FA4B2'
+        });
+        console.log(`✅ Updated Learning category ${category.id}`);
+      }
+
+      // If no Learning category exists, create one
+      if (learningCategories.length === 0) {
+        console.log('➕ No Learning category found, creating one...');
+        await FirebaseDatabaseService.createCategory(currentUser.uid, {
+          name: 'Learning',
+          color: '#8FA4B2',
+          icon: 'book'
+        });
+        console.log('✅ Created Learning category with correct color');
+      }
+
+      // Reload data
+      await get().loadCategories();
+      await get().loadHabits();
+      
+      console.log('🎯 === ONE-TIME LEARNING FIX COMPLETE ===\n');
+      console.log('✅ Learning category should now be #8FA4B2');
+    } catch (error) {
+      console.error('❌ One-time Learning fix failed:', error);
+    }
   },
 });
