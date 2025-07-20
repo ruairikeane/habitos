@@ -201,6 +201,50 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </View>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[globalStyles.card, styles.menuItem]}
+            onPress={async () => {
+              Alert.alert(
+                'Fix Habit Colors',
+                'This will ensure all habits use their category colors correctly and fix the Learning category to show dusty blue.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { 
+                    text: 'Fix Colors', 
+                    onPress: async () => {
+                      console.log('🎨 Starting habit color fix from Settings...');
+                      const result = await fixHabitColors();
+                      
+                      if (result.success) {
+                        Alert.alert(
+                          'Colors Fixed!', 
+                          `Successfully updated ${result.updatedCount} items. Learning category should now show correct dusty blue color (#8FA4B2).`
+                        );
+                      } else {
+                        Alert.alert('Fix Failed', result.error || 'Unknown error occurred');
+                      }
+                    }
+                  }
+                ]
+              );
+            }}
+          >
+            <View style={styles.menuItemContent}>
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="color-palette" size={24} color="#8FA4B2" />
+                <View style={styles.menuItemText}>
+                  <Text style={[typography.bodyMedium, styles.menuItemTitle]}>
+                    Fix Learning Category Colors
+                  </Text>
+                  <Text style={[typography.caption, styles.menuItemDescription]}>
+                    Ensure Learning habits show dusty blue color
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
         </View>
 
 

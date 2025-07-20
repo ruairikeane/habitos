@@ -21,7 +21,8 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
     loadHabits, 
     loadTodaysEntries, 
     toggleHabitCompletion,
-    clearError
+    clearError,
+    fixHabitColors
   } = useStore();
 
   const [currentTip, setCurrentTip] = useState(0);
@@ -66,6 +67,20 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
       } else {
         console.log('\n⚠️ NO TODAY\'S ENTRIES FOUND');
       }
+      
+      // AUTO-FIX LEARNING CATEGORY COLORS
+      console.log('\n🎨 === RUNNING AUTOMATIC COLOR FIX ===');
+      try {
+        const result = await fixHabitColors();
+        if (result.success && result.updatedCount > 0) {
+          console.log(`✅ Fixed ${result.updatedCount} color issues automatically`);
+        } else {
+          console.log('✅ All habit colors already correct');
+        }
+      } catch (error) {
+        console.error('❌ Auto color fix failed:', error);
+      }
+      console.log('🎨 === AUTO COLOR FIX COMPLETE ===\n');
     };
     loadData();
   }, []);
