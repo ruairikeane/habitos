@@ -236,6 +236,14 @@ export function HabitsScreen({ navigation }: HabitsScreenProps) {
               const monthlyProgress = calculateMonthlyProgress(habit.id);
               const streak = calculateStreak(habit.id);
               
+              // LEARNING COLOR DEBUG - Check progress bar colors
+              if (habit.category.name.toLowerCase().includes('learning')) {
+                console.log(`\n🟦 LEARNING PROGRESS BAR DEBUG: "${habit.name}"`);
+                console.log('  Category Color for Progress Bar:', habit.category.color);
+                console.log('  Expected: #8FA4B2');
+                console.log('  Match:', habit.category.color === '#8FA4B2' ? '✅ CORRECT' : '❌ WRONG');
+              }
+              
               return (
                 <TouchableOpacity 
                   key={habit.id} 

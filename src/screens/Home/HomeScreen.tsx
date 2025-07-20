@@ -68,21 +68,18 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
         console.log('\n⚠️ NO TODAY\'S ENTRIES FOUND');
       }
 
-      // ONE-TIME LEARNING COLOR FIX
+      // FORCE LEARNING COLOR FIX (temporarily forcing it to run again)
       const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-      const hasRunLearningFix = await AsyncStorage.getItem('learning_color_fix_completed');
       
-      if (!hasRunLearningFix) {
-        console.log('\n🎯 Running one-time Learning category color fix...');
-        try {
-          await oneTimeLearningFix();
-          await AsyncStorage.setItem('learning_color_fix_completed', 'true');
-          console.log('✅ One-time Learning color fix completed and flagged');
-        } catch (error) {
-          console.error('❌ One-time Learning fix failed:', error);
-        }
-      } else {
-        console.log('✅ Learning color fix already completed previously');
+      console.log('\n🎯 FORCING Learning category color fix to run again...');
+      try {
+        // Clear the flag to force it to run
+        await AsyncStorage.removeItem('learning_color_fix_completed');
+        await oneTimeLearningFix();
+        await AsyncStorage.setItem('learning_color_fix_completed', 'true');
+        console.log('✅ FORCED Learning color fix completed');
+      } catch (error) {
+        console.error('❌ FORCED Learning fix failed:', error);
       }
     };
     loadData();
@@ -260,9 +257,15 @@ export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScr
               const streak = habitStreaks.get(habit.id);
               const stats = habitStats.get(habit.id);
               
-              // Extra debug for habit rendering
-              console.log(`HomeScreen: Rendering habit ${habit.name} (${habit.id}) - isCompleted: ${isCompleted}`);
-              console.log('Habit object:', { id: habit.id, name: habit.name, color: habit.color, category: habit.category });
+              // LEARNING COLOR DEBUG - Check what's actually being passed to AnimatedCheckbox
+              if (habit.category.name.toLowerCase().includes('learning')) {
+                console.log(`\n🔵 LEARNING HABIT DEBUG: "${habit.name}"`);
+                console.log('  Category Name:', habit.category.name);
+                console.log('  Category Color:', habit.category.color);
+                console.log('  Category ID:', habit.category.id);
+                console.log('  Expected Color: #8FA4B2');
+                console.log('  Color Match:', habit.category.color === '#8FA4B2' ? '✅ CORRECT' : '❌ WRONG');
+              }
               
               return (
                 <TouchableOpacity 
