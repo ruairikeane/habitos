@@ -6,11 +6,17 @@ import { colors, typography, globalStyles, spacing } from '@/styles';
 import { EXTENDED_HABIT_TIPS, STACKING_TEMPLATES } from '@/services/defaultData';
 import { useScrollToTop } from '@/navigation/TabNavigator';
 import { useStore } from '@/store';
+import { geminiService, type HabitSuggestion, type AIAnalysis } from '@/services/ai/geminiService';
 import type { TipsScreenProps } from '@/types';
 
 export function TipsScreen({ navigation }: TipsScreenProps) {
   const [activeSection, setActiveSection] = useState<'tips' | 'stacking' | 'suggested'>('tips');
   const { habits, categories, isLoading, loadHabits, loadCategories } = useStore();
+  
+  // AI-powered suggestions state
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
@@ -23,6 +29,39 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
     };
     loadData();
   }, []);
+
+  // Generate AI suggestions when habits change
+  useEffect(() => {
+    if (habits.length >= 0 && activeSection === 'suggested') {
+      generateAISuggestions();
+    }
+  }, [habits, activeSection]);
+
+  const generateAISuggestions = async () => {
+    setIsLoadingAI(true);
+    setAiError(null);
+    
+    try {
+      console.log('🤖 Generating AI suggestions for', habits.length, 'habits...');
+      const analysis = await geminiService.generateHabitSuggestions(habits, {
+        challengeLevel: 'moderate',
+        timeAvailable: 30, // Could be user preference
+      });
+      
+      setAiAnalysis(analysis);
+      console.log('🤖 AI Analysis complete:', analysis.suggestions.length, 'suggestions');
+    } catch (error) {
+      console.error('🤖 AI suggestion error:', error);
+      setAiError('AI suggestions temporarily unavailable');
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
+  const refreshAISuggestions = () => {
+    generateAISuggestions();
+  };
+
 
   // Register scroll function for tab navigation
   useScrollToTop('Tips', () => {
@@ -265,38 +304,89 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
   };
 
   const renderSuggested = () => {
-    const suggestions = getSuggestedHabits();
-    
-    if (isLoading) {
+    // Show loading state for AI analysis
+    if (isLoadingAI || isLoading) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[typography.bodySmall, styles.loadingText]}>
-            Analyzing your habits...
+            🤖 AI is analyzing your habits...
+          </Text>
+          <Text style={[typography.caption, styles.loadingSubtext]}>
+            Generating personalized suggestions
           </Text>
         </View>
       );
     }
 
+    // Use AI suggestions if available, fallback to hardcoded
+    const suggestions = aiAnalysis?.suggestions || getSuggestedHabits();
+    const insights = aiAnalysis?.insights || [];
+    const recommendations = aiAnalysis?.recommendations || [];
+
     return (
       <View style={styles.tipsContainer}>
-        <View style={[globalStyles.card, styles.infoCard]}>
-          <Text style={[typography.h5, styles.sectionTitle]}>
-            🎯 Personalized for You
-          </Text>
-          <Text style={[typography.body, styles.sectionContent]}>
-            {habits.length === 0 
-              ? "Start your habit journey with these foundational habits that build momentum."
-              : `Based on your ${habits.length} existing habits, here are intelligent suggestions to enhance your routine.`
-            }
-          </Text>
+        {/* AI Header */}
+        <View style={[globalStyles.card, styles.aiHeaderCard]}>
+          <View style={styles.aiHeaderRow}>
+            <View style={styles.aiHeaderContent}>
+              <Text style={[typography.h5, styles.aiTitle]}>
+                🤖 AI-Powered Suggestions
+              </Text>
+              <Text style={[typography.body, styles.aiSubtitle]}>
+                {habits.length === 0 
+                  ? "AI recommends these foundational habits to start your journey."
+                  : `Based on your ${habits.length} habits, AI suggests these next steps.`
+                }
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={refreshAISuggestions}
+              disabled={isLoadingAI}
+            >
+              <Ionicons 
+                name="refresh" 
+                size={20} 
+                color={colors.primary} 
+                style={{ opacity: isLoadingAI ? 0.5 : 1 }}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* AI Error State */}
+        {aiError && (
+          <View style={[globalStyles.card, styles.errorCard]}>
+            <Text style={[typography.bodySmall, styles.errorText]}>
+              {aiError}. Using smart fallback suggestions.
+            </Text>
+          </View>
+        )}
+
+        {/* AI Insights */}
+        {insights.length > 0 && (
+          <View style={[globalStyles.card, styles.insightsCard]}>
+            <Text style={[typography.h5, styles.insightsTitle]}>
+              💡 AI Insights
+            </Text>
+            {insights.map((insight, index) => (
+              <Text key={index} style={[typography.bodySmall, styles.insightText]}>
+                • {insight}
+              </Text>
+            ))}
+          </View>
+        )}
 
         <Text style={[typography.h4, styles.templatesHeader]}>
           Suggested Habits:
         </Text>
 
         {suggestions.map((suggestion, index) => {
+          // Handle both AI and fallback suggestion formats
+          const isAISuggestion = 'reasoning' in suggestion;
+          const categoryColor = getCategoryColor(suggestion.category);
+          
           return (
             <TouchableOpacity 
               key={index} 
@@ -304,8 +394,8 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
                 globalStyles.card, 
                 styles.suggestionCard,
                 { 
-                  backgroundColor: suggestion.color + '10',
-                  borderLeftColor: suggestion.color,
+                  backgroundColor: categoryColor + '10',
+                  borderLeftColor: categoryColor,
                 }
               ]}
               onPress={() => navigation.navigate('AddHabit', { 
@@ -317,45 +407,93 @@ export function TipsScreen({ navigation }: TipsScreenProps) {
               <View style={styles.suggestionHeader}>
                 <View style={styles.suggestionTitleRow}>
                   <Ionicons 
-                    name={suggestion.icon as any} 
+                    name={getCategoryIcon(suggestion.category)} 
                     size={20} 
-                    color={suggestion.color} 
+                    color={categoryColor} 
                     style={styles.suggestionIcon}
                   />
                   <Text style={[typography.bodyMedium, styles.suggestionName]}>
                     {suggestion.name}
                   </Text>
                 </View>
-                <Ionicons name="add-circle" size={24} color={colors.primary} />
+                <View style={styles.suggestionMeta}>
+                  {isAISuggestion && suggestion.estimatedMinutes && (
+                    <Text style={[typography.caption, styles.timeText]}>
+                      {suggestion.estimatedMinutes}min
+                    </Text>
+                  )}
+                  <Ionicons name="add-circle" size={24} color={colors.primary} />
+                </View>
               </View>
               
               <Text style={[typography.caption, styles.suggestionCategory]}>
                 {suggestion.category}
+                {isAISuggestion && suggestion.difficulty && (
+                  <Text style={styles.difficultyBadge}>
+                    {' '}• {suggestion.difficulty}
+                  </Text>
+                )}
               </Text>
               
               <Text style={[typography.bodySmall, styles.suggestionReason]}>
-                💡 {suggestion.reason}
+                🧠 {isAISuggestion ? suggestion.reasoning : suggestion.reason}
               </Text>
+
+              {isAISuggestion && suggestion.stackingOpportunity && (
+                <Text style={[typography.bodySmall, styles.stackingText]}>
+                  🔗 {suggestion.stackingOpportunity}
+                </Text>
+              )}
             </TouchableOpacity>
           );
         })}
 
-        {habits.length > 0 && (
-          <View style={[globalStyles.card, styles.analysisCard]}>
-            <Text style={[typography.h5, styles.analysisTitle]}>
-              📊 Your Habit Analysis
+        {/* AI Recommendations */}
+        {recommendations.length > 0 && (
+          <View style={[globalStyles.card, styles.recommendationsCard]}>
+            <Text style={[typography.h5, styles.recommendationsTitle]}>
+              🎯 Strategic Recommendations
             </Text>
-            <Text style={[typography.body, styles.analysisText]}>
-              You have habits in {new Set(habits.map(h => h.category.name)).size} different categories. 
-              {habits.length >= 5 
-                ? " You're building a well-rounded routine! Consider habit stacking to maximize consistency."
-                : " Consider adding habits in new categories for a more balanced lifestyle."
-              }
-            </Text>
+            {recommendations.map((rec, index) => (
+              <Text key={index} style={[typography.bodySmall, styles.recommendationText]}>
+                • {rec}
+              </Text>
+            ))}
           </View>
         )}
       </View>
     );
+  };
+
+  // Helper functions for category colors and icons
+  const getCategoryColor = (categoryName: string): string => {
+    const colorMap: Record<string, string> = {
+      'Health & Wellness': colors.health,
+      'Health': colors.health,
+      'Productivity': colors.productivity,
+      'Learning': colors.learning,
+      'Mindfulness': colors.mindfulness,
+      'Personal Care': colors.personalCare,
+      'Social': colors.social,
+      'Creative': colors.creative,
+      'Fitness': colors.fitness,
+    };
+    return colorMap[categoryName] || colors.primary;
+  };
+
+  const getCategoryIcon = (categoryName: string): keyof typeof Ionicons.glyphMap => {
+    const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+      'Health & Wellness': 'heart',
+      'Health': 'heart',
+      'Productivity': 'checkmark-circle',
+      'Learning': 'book',
+      'Mindfulness': 'leaf',
+      'Personal Care': 'person',
+      'Social': 'people',
+      'Creative': 'color-palette',
+      'Fitness': 'fitness',
+    };
+    return iconMap[categoryName] || 'star';
   };
 
   return (
@@ -559,5 +697,105 @@ const styles = StyleSheet.create({
   analysisText: {
     lineHeight: 22,
     color: colors.textPrimary,
+  },
+  // AI-specific styles
+  aiHeaderCard: {
+    backgroundColor: colors.primary + '08',
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+  },
+  aiHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  aiHeaderContent: {
+    flex: 1,
+  },
+  aiTitle: {
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+  aiSubtitle: {
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  refreshButton: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+  },
+  errorCard: {
+    backgroundColor: colors.error + '10',
+    borderWidth: 1,
+    borderColor: colors.error + '30',
+  },
+  errorText: {
+    color: colors.error,
+    textAlign: 'center',
+  },
+  insightsCard: {
+    backgroundColor: colors.learning + '08',
+    borderWidth: 1,
+    borderColor: colors.learning + '20',
+  },
+  insightsTitle: {
+    color: colors.learning,
+    marginBottom: spacing.sm,
+  },
+  insightText: {
+    color: colors.textPrimary,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
+  },
+  loadingSubtext: {
+    marginTop: spacing.xs,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  suggestionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  timeText: {
+    color: colors.textSecondary,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 11,
+  },
+  difficultyBadge: {
+    color: colors.textTertiary,
+    fontSize: 11,
+    textTransform: 'capitalize',
+  },
+  stackingText: {
+    color: colors.secondary,
+    fontStyle: 'italic',
+    lineHeight: 18,
+    marginTop: spacing.xs,
+    backgroundColor: colors.secondary + '10',
+    padding: spacing.xs,
+    borderRadius: 4,
+  },
+  recommendationsCard: {
+    backgroundColor: colors.success + '08',
+    borderWidth: 1,
+    borderColor: colors.success + '20',
+    marginTop: spacing.md,
+  },
+  recommendationsTitle: {
+    color: colors.success,
+    marginBottom: spacing.sm,
+  },
+  recommendationText: {
+    color: colors.textPrimary,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
   },
 });
