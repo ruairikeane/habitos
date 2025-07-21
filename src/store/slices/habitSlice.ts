@@ -22,9 +22,9 @@ export interface HabitSlice {
   loadHabits: () => Promise<void>;
   loadCategories: () => Promise<void>;
   loadTodaysEntries: () => Promise<void>;
-  loadHabitStats: (habitId: string) => Promise<void>;
+  loadHabitStats: (habitId: string, month?: number, year?: number) => Promise<void>;
   loadHabitStreaks: (habitId: string) => Promise<void>;
-  loadAllHabitsStats: () => Promise<void>;
+  loadAllHabitsStats: (month?: number, year?: number) => Promise<void>;
   forceRefreshStreaks: () => Promise<void>;
   cleanupDuplicateCategories: () => Promise<{ success: boolean; error?: string; removedCount?: number }>;
   fixHabitColors: () => Promise<{ success: boolean; error?: string; updatedCount?: number }>;
@@ -477,9 +477,9 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
   },
 
   // Load habit statistics
-  loadHabitStats: async (habitId: string) => {
+  loadHabitStats: async (habitId: string, month?: number, year?: number) => {
     try {
-      console.log('HabitSlice: Loading habit stats from Firebase for habit', habitId);
+      console.log('HabitSlice: Loading habit stats from Firebase for habit', habitId, month !== undefined ? `(${year}/${month + 1})` : '(current)');
       
       const user = await FirebaseAuthService.getCurrentUser();
       console.log('HabitSlice: getCurrentUser returned:', user ? { uid: user.uid, email: user.email } : 'null');
@@ -489,7 +489,7 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
       }
 
       // Use Firebase analytics service to calculate stats
-      const stats = await HabitAnalyticsService.calculateHabitStats(habitId, user.uid);
+      const stats = await HabitAnalyticsService.calculateHabitStats(habitId, user.uid, month, year);
       console.log('HabitSlice: Calculated stats for habit', habitId, ':', stats);
       
       // Update the stats in store
@@ -531,14 +531,14 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
   },
 
   // Load stats for all habits
-  loadAllHabitsStats: async () => {
+  loadAllHabitsStats: async (month?: number, year?: number) => {
     try {
-      console.log('HabitSlice: Calculating real stats for all habits');
+      console.log('HabitSlice: Calculating real stats for all habits', month !== undefined ? `for ${year}/${month + 1}` : '(current)');
       const habits = get().habits;
       
       // Load stats for each habit individually to get real data
       for (const habit of habits) {
-        await get().loadHabitStats(habit.id);
+        await get().loadHabitStats(habit.id, month, year);
         await get().loadHabitStreaks(habit.id);
       }
       

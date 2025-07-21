@@ -121,17 +121,18 @@ export class HabitAnalyticsService {
 
   // Memoized version of calculateHabitStats
   static calculateHabitStats = memoizeAsync(
-    async (habitId: string, userId: string): Promise<HabitStats> => {
-      return HabitAnalyticsService._calculateHabitStats(habitId, userId);
+    async (habitId: string, userId: string, month?: number, year?: number): Promise<HabitStats> => {
+      return HabitAnalyticsService._calculateHabitStats(habitId, userId, month, year);
     },
-    (habitId: string, userId: string) => `stats_${habitId}_${userId}`,
+    (habitId: string, userId: string, month?: number, year?: number) => 
+      `stats_${habitId}_${userId}_${month ?? 'current'}_${year ?? 'current'}`,
     10 * 1000 // 10 seconds cache for faster debugging
   );
 
   /**
    * Calculate comprehensive habit statistics (internal implementation)
    */
-  private static async _calculateHabitStats(habitId: string, userId: string): Promise<HabitStats> {
+  private static async _calculateHabitStats(habitId: string, userId: string, month?: number, year?: number): Promise<HabitStats> {
     try {
       console.log('Analytics: _calculateHabitStats called with habitId:', habitId, 'userId:', userId);
       
@@ -211,15 +212,15 @@ export class HabitAnalyticsService {
         Math.max(1, Math.ceil((Date.now() - new Date(sortedEntries[sortedEntries.length - 1].entry_date).getTime()) / (7 * 24 * 60 * 60 * 1000))) : 1;
       const averageCompletionsPerWeek = totalCompletions / weeksOfData;
 
-      // Monthly progress (current month)
+      // Monthly progress (selected month or current month)
       const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const targetMonth = month ?? now.getMonth();
+      const targetYear = year ?? now.getFullYear();
+      const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
       
       const monthlyCompletions = completedEntries.filter(e => {
         const entryDate = new Date(e.entry_date);
-        return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+        return entryDate.getMonth() === targetMonth && entryDate.getFullYear() === targetYear;
       }).length;
       
       const monthlyProgress = monthlyCompletions / daysInMonth;

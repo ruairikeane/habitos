@@ -16,6 +16,10 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Month selector state
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -26,16 +30,31 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
   });
 
   useEffect(() => {
+    console.log('StatisticsScreen: Component mounted or habits changed');
     loadAnalyticsData();
-  }, [habits]);
+  }, [habits, selectedMonth, selectedYear]);
+
+  // Also reload analytics when habitStats change
+  useEffect(() => {
+    console.log('StatisticsScreen: Habit stats changed, reloading analytics');
+    loadAnalyticsData();
+  }, [habitStats]);
 
   // Load habit stats when component mounts or habits change
   useEffect(() => {
     if (habits.length > 0) {
-      console.log('StatisticsScreen: Loading habit stats for', habits.length, 'habits');
-      loadAllHabitsStats();
+      console.log('StatisticsScreen: Loading habit stats for', habits.length, 'habits', 'for month', selectedYear, '/', selectedMonth + 1);
+      const loadStats = async () => {
+        await loadAllHabitsStats(selectedMonth, selectedYear);
+        // Force analytics reload after stats are loaded
+        setTimeout(() => {
+          console.log('StatisticsScreen: Stats loaded, reloading analytics after delay');
+          loadAnalyticsData();
+        }, 1000);
+      };
+      loadStats();
     }
-  }, [habits, loadAllHabitsStats]);
+  }, [habits, selectedMonth, selectedYear, loadAllHabitsStats]);
 
   // Recalculate category stats when habitStats change
   useEffect(() => {
@@ -51,15 +70,27 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
     }
 
     try {
-      console.log('StatisticsScreen: Loading offline analytics data');
+      console.log('StatisticsScreen: Loading Firebase analytics data for', habits.length, 'habits');
       
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth();
+      // Get user ID from store
+      const { FirebaseAuthService } = await import('@/services/firebase');
+      const currentUser = await FirebaseAuthService.getCurrentUser();
+      if (!currentUser) {
+        console.error('No authenticated user found for analytics');
+        setIsLoading(false);
+        return;
+      }
+
+      const currentYear = selectedYear;
+      const currentMonth = selectedMonth;
       
-      // Create chart data showing percentage of habits completed per month
-      const monthlyChartData = [];
+      // Get monthly completion data from Firebase
+      const monthlyData = await HabitAnalyticsService.getMonthlyCompletionData(currentUser.uid, currentYear);
+      console.log('StatisticsScreen: Raw monthly data from Firebase:', monthlyData);
       
       // Calculate percentage data for the last 6 months
+      const monthlyChartData = [];
+      
       for (let i = 5; i >= 0; i--) {
         const monthDate = new Date(currentYear, currentMonth - i, 1);
         const monthNum = monthDate.getMonth() + 1;
@@ -69,33 +100,28 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
         // Calculate days in this month
         const daysInMonth = new Date(year, monthDate.getMonth() + 1, 0).getDate();
         
-        // Calculate total possible completions for all habits in this month
+        // Calculate total possible completions for all active habits in this month
         const totalPossibleCompletions = habits.length * daysInMonth;
         
-        // Calculate actual completions for this month
-        let actualCompletions = 0;
+        // Get actual completions for this month from Firebase data
+        const monthDataEntry = monthlyData.find(m => m.month === monthNum);
+        const actualCompletions = monthDataEntry ? monthDataEntry.completions : 0;
         
-        // Load offline data to count completions for this specific month/year
-        const { OfflineStorageService } = await import('@/services/storage/offlineStorage');
-        const offlineData = await OfflineStorageService.loadOfflineData();
+        // Calculate percentage - but handle the fact that we may have historical months with different habit counts
+        // For a more accurate calculation, use current number of active habits
+        const habitsCountForMonth = habits.length; // Use current active habits count
+        const possibleCompletionsForMonth = habitsCountForMonth * daysInMonth;
+        const completionPercentage = possibleCompletionsForMonth > 0 ? 
+          Math.round((actualCompletions / possibleCompletionsForMonth) * 100) : 0;
         
-        // Count completed entries for this month
-        actualCompletions = offlineData.habitEntries.filter(entry => {
-          const entryDate = new Date(entry.entry_date);
-          return entry.is_completed && 
-                 entryDate.getMonth() === monthDate.getMonth() && 
-                 entryDate.getFullYear() === year;
-        }).length;
-        
-        // Calculate percentage
-        const completionPercentage = totalPossibleCompletions > 0 ? 
-          Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
+        console.log(`Month ${monthName}: ${actualCompletions} completions / ${possibleCompletionsForMonth} possible = ${completionPercentage}%`);
         
         monthlyChartData.push({
           month: monthNum,
           monthName,
-          completions: completionPercentage, // Now storing percentage instead of raw count
-          year: year
+          completions: completionPercentage,
+          year: year,
+          rawCompletions: actualCompletions // Keep raw data for debugging
         });
       }
       
@@ -108,7 +134,11 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
 
       setMonthlyData(monthlyChartData);
       setOverallProgress(overallData);
-      console.log('StatisticsScreen: Loaded analytics data', { monthlyChartData, overallData });
+      console.log('StatisticsScreen: ✅ Final results:');
+      console.log('  - Monthly chart data:', monthlyChartData);
+      console.log('  - Overall progress:', overallData);
+      console.log('  - HabitStats available:', habitStats.size);
+      console.log('  - Total completions calculated:', totalCompletions);
     } catch (error) {
       console.error('Error loading analytics data:', error);
     } finally {
@@ -117,17 +147,61 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
   };
 
   const getCurrentMonthYear = () => {
-    const now = new Date();
-    const month = now.toLocaleString('default', { month: 'long' });
-    const year = now.getFullYear();
+    const date = new Date(selectedYear, selectedMonth);
+    const month = date.toLocaleString('default', { month: 'long' });
+    const year = selectedYear;
     return `${month} ${year}`;
   };
 
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (selectedMonth === 0) {
+        setSelectedMonth(11);
+        setSelectedYear(selectedYear - 1);
+      } else {
+        setSelectedMonth(selectedMonth - 1);
+      }
+    } else {
+      // Don't allow navigation to future months
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      if (selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < currentMonth)) {
+        if (selectedMonth === 11) {
+          setSelectedMonth(0);
+          setSelectedYear(selectedYear + 1);
+        } else {
+          setSelectedMonth(selectedMonth + 1);
+        }
+      }
+    }
+  };
+
+  const canNavigateNext = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    return selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < currentMonth);
+  };
+
   const calculateOverallMonthlyProgress = () => {
-    if (habitStats.size === 0) return 0;
+    console.log('StatisticsScreen: Calculating overall monthly progress for', selectedYear, '/', selectedMonth + 1);
+    console.log('  - HabitStats size:', habitStats.size);
+    
+    if (habitStats.size === 0) {
+      console.log('  - No habit stats available, returning 0');
+      return 0;
+    }
+    
     const allStats = Array.from(habitStats.values());
+    console.log('  - All stats:', allStats.map(s => ({ monthly: s.monthlyProgress, total: s.totalCompletions })));
+    
     const avgProgress = allStats.reduce((sum, stat) => sum + stat.monthlyProgress, 0) / allStats.length;
-    return Math.round(avgProgress * 100);
+    const result = Math.round(avgProgress * 100);
+    
+    console.log('  - Average progress:', avgProgress, '-> Percentage:', result);
+    return result;
   };
 
   const getBestStreak = () => {
@@ -227,9 +301,45 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
       <ScrollView ref={scrollViewRef} style={globalStyles.scrollContainer} contentContainerStyle={globalStyles.scrollContent}>
         {/* Monthly Progress Overview */}
         <View style={styles.section}>
-          <Text style={[typography.h4, styles.sectionTitle]}>
-            {getCurrentMonthYear()} Overview
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[typography.h4, styles.sectionTitle]}>
+              {getCurrentMonthYear()} Overview
+            </Text>
+            <View style={styles.headerControls}>
+              <TouchableOpacity 
+                style={[styles.monthNavButton, { opacity: 1 }]}
+                onPress={() => navigateMonth('prev')}
+              >
+                <Ionicons name="chevron-back" size={20} color={colors.primary} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.monthNavButton, { opacity: canNavigateNext() ? 1 : 0.3 }]}
+                onPress={() => navigateMonth('next')}
+                disabled={!canNavigateNext()}
+              >
+                <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.refreshButton}
+                onPress={() => {
+                  setIsLoading(true);
+                  loadAllHabitsStats(selectedMonth, selectedYear).then(() => {
+                    loadAnalyticsData();
+                  });
+                }}
+                disabled={isLoading}
+              >
+                <Ionicons 
+                  name="refresh" 
+                  size={20} 
+                  color={colors.primary} 
+                  style={{ opacity: isLoading ? 0.5 : 1 }}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
           
           <View style={[globalStyles.card, styles.overviewCard]}>
             <View style={styles.progressRingContainer}>
@@ -428,7 +538,7 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
             
             <View style={styles.recordItem}>
               <Text style={[typography.h5, styles.recordValue]}>
-                {monthlyData.length > 0 ? Math.max(...monthlyData.map(m => m.completions), 0) : 0}%
+                {monthlyData.length > 0 ? Math.max(...monthlyData.map(m => m.completions || 0)) : 0}%
               </Text>
               <Text style={[typography.caption, styles.recordLabel]}>
                 ⚡ Best Month
@@ -456,8 +566,33 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.lg,
   },
-  sectionTitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    flex: 1,
+  },
+  headerControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  monthNavButton: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+  },
+  refreshButton: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
   },
   overviewCard: {
     alignItems: 'center',
@@ -538,10 +673,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   trendCard: {
-    gap: -12, // More negative gap to bring progress bars closer to completion label
+    gap: spacing.md,
   },
   trendChart: {
-    height: 160, // Increased to accommodate larger bars and percentage labels
+    height: 120, // Further reduced height to move percentage labels lower and closer to bottom text
   },
   chartBars: {
     flexDirection: 'row',
