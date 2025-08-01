@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { EXTENDED_HABIT_TIPS } from '@/services/defaultData';
-import { AnimatedCheckbox, StreakCelebration } from '@/components/common';
-import { useDateTracker } from '@/hooks';
-import { getTodayLocalDate } from '@/utils/dateHelpers';
-import { useScrollToTop } from '@/navigation/TabNavigator';
-import type { HomeScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { EXTENDED_HABIT_TIPS } from '../../services/defaultData';
+import { AnimatedCheckbox, StreakCelebration } from '../../components/common';
+import { useDateTracker } from '../../hooks';
+import { getTodayLocalDate } from '../../utils/dateHelpers';
+import { useScrollToTop } from '../../navigation/TabNavigator';
+import type { HomeScreenProps } from '../../types';
 
 export const HomeScreen = React.memo(function HomeScreen({ navigation }: HomeScreenProps) {
   const { 

@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Habit, HabitEntry, Category, HabitWithCategory } from '@/types';
-import { HabitFrequency } from '@/types';
+import type { Habit, HabitEntry, Category, HabitWithCategory } from '../../types';
+import { HabitFrequency } from '../../types';
 import { FileBackupService } from './fileBackupService';
-import { getTodayLocalDate } from '@/utils/dateHelpers';
+import { getTodayLocalDate } from '../../utils/dateHelpers';
 
 interface OfflineData {
   habits: HabitWithCategory[];

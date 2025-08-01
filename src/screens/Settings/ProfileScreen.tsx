@@ -3,9 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import type { ProfileScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import type { ProfileScreenProps } from '../../types';
 
 export function ProfileScreen({ navigation }: ProfileScreenProps) {
   const { habits, habitStats, habitStreaks, resetApp, backupToFirebase } = useStore();

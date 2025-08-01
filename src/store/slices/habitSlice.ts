@@ -1,12 +1,12 @@
 import { StateCreator } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FirebaseAuthService, FirebaseDatabaseService } from '@/services/firebase';
-import { OfflineStorageService } from '@/services/storage/offlineStorage';
-import { ResetStorageService } from '@/services/storage/resetStorage';
-import { HabitAnalyticsService } from '@/services/analytics';
-import { analyticsCache } from '@/utils/memoization';
-import { getTodayLocalDate } from '@/utils/dateHelpers';
-import type { Habit, HabitEntry, HabitWithCategory, Category, HabitStats, HabitStreak } from '@/types';
+import { FirebaseAuthService, FirebaseDatabaseService } from '../../services/firebase';
+import { OfflineStorageService } from '../../services/storage/offlineStorage';
+import { ResetStorageService } from '../../services/storage/resetStorage';
+import { HabitAnalyticsService } from '../../services/analytics';
+import { analyticsCache } from '../../utils/memoization';
+import { getTodayLocalDate } from '../../utils/dateHelpers';
+import type { Habit, HabitEntry, HabitWithCategory, Category, HabitStats, HabitStreak } from '../../types';
 
 export interface HabitSlice {
   // State
@@ -148,6 +148,24 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
         const categories = await FirebaseDatabaseService.getCategories(currentUser.uid);
         console.log('HabitSlice: Loaded Firebase categories:', categories.length);
         console.log('HabitSlice: Category details:', categories.map(c => ({ id: c.id, name: c.name })));
+        
+        // Auto-fix productivity color if needed
+        const productivityCategory = categories.find(cat => 
+          cat.name.toLowerCase().includes('productivity')
+        );
+        if (productivityCategory && productivityCategory.color !== '#D4B85A') {
+          console.log('🎨 Auto-fixing productivity category color...');
+          try {
+            await FirebaseDatabaseService.updateCategory(productivityCategory.id, {
+              color: '#D4B85A'
+            });
+            // Update the local category
+            productivityCategory.color = '#D4B85A';
+            console.log('✅ Productivity color fixed to earth yellow');
+          } catch (error) {
+            console.error('❌ Failed to fix productivity color:', error);
+          }
+        }
         
         // Filter out duplicates just in case
         const uniqueCategories = categories.filter((category, index, self) => 
@@ -439,8 +457,10 @@ export const createHabitSlice: StateCreator<HabitSlice> = (set, get) => ({
         
         // Update stats in background
         console.log('📈 Updating habit stats and streaks...');
-        await get().loadHabitStats(habitId);
-        await get().loadHabitStreaks(habitId);
+        // Clear cache to ensure fresh calculations
+        HabitAnalyticsService.clearAllCache();
+        // Refresh all habit stats to ensure UI consistency
+        await get().loadAllHabitsStats();
         console.log('📈 Stats update complete');
         
       } else {

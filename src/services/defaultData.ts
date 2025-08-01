@@ -1,5 +1,5 @@
-import { colors } from '@/styles';
-import type { Category } from '@/types';
+import { colors } from '../styles';
+import type { Category } from '../types';
 
 export const DEFAULT_CATEGORIES: Omit<Category, 'id' | 'user_id' | 'created_at' | 'updated_at'>[] = [
   {

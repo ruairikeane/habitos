@@ -1,5 +1,5 @@
-import { FirebaseDatabaseService } from '@/services/firebase';
-import { DEFAULT_CATEGORIES } from '@/services/defaultData';
+import { FirebaseDatabaseService } from '../../services/firebase';
+import { DEFAULT_CATEGORIES } from '../../services/defaultData';
 
 export async function initializeNewUser(userId: string) {
   try {

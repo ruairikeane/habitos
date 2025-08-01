@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { notificationService, type HabitNotification } from '@/services/notifications';
+import { notificationService, type HabitNotification } from '../services/notifications';
 
 export interface UseNotificationsReturn {
   permissionGranted: boolean;

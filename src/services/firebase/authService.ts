@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, addDoc } from 'firebase/firestore';
 import { auth, firestore, COLLECTIONS, handleFirebaseError } from './config';
-import { BiometricService } from '@/services/biometric';
+import { BiometricService } from '../../services/biometric';
 
 export interface AuthUser extends FirebaseUser {
   profile?: UserProfile;
@@ -267,7 +267,7 @@ export class FirebaseAuthService {
 
       const defaultCategories = [
         { name: 'Health', color: '#9CAF88', icon: 'heart' },
-        { name: 'Productivity', color: '#A4956B', icon: 'briefcase' },
+        { name: 'Productivity', color: '#D4B85A', icon: 'briefcase' },
         { name: 'Learning', color: '#8FA4B2', icon: 'book' },
         { name: 'Fitness', color: '#A67C7C', icon: 'barbell' },
         { name: 'Mindfulness', color: '#9B8BA4', icon: 'leaf' },

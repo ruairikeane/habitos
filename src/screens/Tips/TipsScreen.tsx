@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { EXTENDED_HABIT_TIPS, STACKING_TEMPLATES } from '@/services/defaultData';
-import { useScrollToTop } from '@/navigation/TabNavigator';
-import { useStore } from '@/store';
-import { geminiService, type HabitSuggestion, type AIAnalysis } from '@/services/ai/geminiService';
-import type { TipsScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { EXTENDED_HABIT_TIPS, STACKING_TEMPLATES } from '../../services/defaultData';
+import { useScrollToTop } from '../../navigation/TabNavigator';
+import { useStore } from '../../store';
+import { geminiService, type HabitSuggestion, type AIAnalysis } from '../../services/ai/geminiService';
+import type { TipsScreenProps } from '../../types';
 
 export function TipsScreen({ navigation }: TipsScreenProps) {
   const [activeSection, setActiveSection] = useState<'tips' | 'stacking' | 'suggested'>('tips');

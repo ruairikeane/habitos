@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { HabitAnalyticsService } from '@/services/analytics';
-import { FirebaseAuthService, FirebaseDatabaseService } from '@/services/firebase';
-import { getTodayLocalDate, getLocalDateString } from '@/utils/dateHelpers';
-import type { HabitDetailScreenProps } from '@/types';
-import type { HabitEntry } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { HabitAnalyticsService } from '../../services/analytics';
+import { FirebaseAuthService, FirebaseDatabaseService } from '../../services/firebase';
+import { getTodayLocalDate, getLocalDateString } from '../../utils/dateHelpers';
+import type { HabitDetailScreenProps } from '../../types';
+import type { HabitEntry } from '../../types';
 
 export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps) {
   const { habitId } = route.params;
@@ -81,7 +81,7 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
       } else {
         // Fallback to offline data
         console.log('⚠️ No user, using offline data for calendar');
-        const { OfflineStorageService } = await import('@/services/storage/offlineStorage');
+        const { OfflineStorageService } = await import('../../services/storage/offlineStorage');
         const offlineData = await OfflineStorageService.loadOfflineData();
         const entries = offlineData.habitEntries.filter(entry => {
           return entry.habit_id === habitId && 
@@ -206,7 +206,7 @@ export function HabitDetailScreen({ route, navigation }: HabitDetailScreenProps)
       // Also update the today's entries in the store to keep everything in sync
       if (date === getTodayLocalDate()) {
         console.log('📅 This is today, refreshing today\'s entries in store...');
-        const { useStore } = await import('@/store');
+        const { useStore } = await import('../../store');
         useStore.getState().loadTodaysEntries();
       }
       

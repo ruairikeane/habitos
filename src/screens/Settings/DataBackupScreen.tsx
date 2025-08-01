@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { OfflineStorageService } from '@/services/storage/offlineStorage';
-import { FileBackupService } from '@/services/storage/fileBackupService';
-import type { DataBackupScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { OfflineStorageService } from '../../services/storage/offlineStorage';
+import { FileBackupService } from '../../services/storage/fileBackupService';
+import type { DataBackupScreenProps } from '../../types';
 
 export function DataBackupScreen({ navigation }: DataBackupScreenProps) {
   const { habits, categories, settings, updateSetting } = useStore();

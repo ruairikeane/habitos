@@ -11,12 +11,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { useNotifications } from '@/hooks';
-import { STACKING_TEMPLATES } from '@/services/defaultData';
-import { HabitFrequency } from '@/types';
-import type { AddHabitScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { useNotifications } from '../../hooks';
+import { STACKING_TEMPLATES } from '../../services/defaultData';
+import { HabitFrequency } from '../../types';
+import type { AddHabitScreenProps } from '../../types';
 
 const HABIT_SUGGESTIONS = [
   { name: 'Drink Water', category: 'Health & Wellness', icon: '💧' },

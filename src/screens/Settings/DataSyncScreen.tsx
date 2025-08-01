@@ -1,10 +1,14 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import type { DataSyncScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { FirebaseDatabaseService } from '../../services/firebase';
+import { useStore } from '../../store';
+import type { DataSyncScreenProps } from '../../types';
 
 export function DataSyncScreen({ navigation }: DataSyncScreenProps) {
+  const { user } = useStore();
+
   const handleCloudSync = () => {
     Alert.alert(
       'Cloud Sync',
@@ -16,6 +20,7 @@ export function DataSyncScreen({ navigation }: DataSyncScreenProps) {
   const handleExportData = () => {
     navigation.navigate('DataBackup');
   };
+
 
   return (
     <SafeAreaView style={globalStyles.container}>
@@ -99,6 +104,7 @@ export function DataSyncScreen({ navigation }: DataSyncScreenProps) {
             </View>
           </TouchableOpacity>
         </View>
+
 
         {/* Future Features */}
         <View style={styles.section}>

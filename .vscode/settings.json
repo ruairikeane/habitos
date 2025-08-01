@@ -1,28 +1,19 @@
 {
-  "typescript.preferences.importModuleSpecifier": "relative",
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/CVS": true,
-    "**/.DS_Store": true,
-    "**/node_modules": true,
-    "**/.expo": true,
-    "**/dist": true,
-    "**/web-build": true
-  },
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/.expo": true,
-    "**/dist": true,
-    "**/web-build": true
-  },
+  "typescript.preferences.useAliasesForRenames": false,
+  "react-native-tools.logLevel": "Info",
+  "react-native-tools.showUserTips": true,
+  "react-native-tools.packager.port": 8081,
   "files.associations": {
     "*.json": "jsonc"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
   },
   "emmet.includeLanguages": {
     "javascript": "javascriptreact",
     "typescript": "typescriptreact"
-  }
+  },
+  "typescript.suggest.autoImports": true,
+  "javascript.suggest.autoImports": true
 }
+EOF < /dev/null

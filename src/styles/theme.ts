@@ -40,9 +40,9 @@ export const colors = {
   healthLight: '#B8C7A8',     // Pale sage
   healthDark: '#7A8471',      // Deep sage
   
-  productivity: '#A4956B',    // Warm olive
-  productivityLight: '#BFB389', // Light olive
-  productivityDark: '#8A7D56', // Deep olive
+  productivity: '#D4B85A',    // Earth yellow
+  productivityLight: '#E1C874', // Light earth yellow
+  productivityDark: '#B89D48', // Deep earth yellow
   
   personalCare: '#C4A484',    // Dusty peach
   personalCareLight: '#D4B89E', // Pale peach

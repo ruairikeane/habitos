@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import type { HelpSupportScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import type { HelpSupportScreenProps } from '../../types';
 
 const FAQ_ITEMS = [
   {

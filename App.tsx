@@ -1,10 +1,10 @@
 import 'react-native-url-polyfill/auto';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { AppNavigator } from '@/navigation';
-import { FirebaseAuthWrapper } from '@/components/auth/FirebaseAuthWrapper';
-import { ErrorBoundary } from '@/components/common';
-import { useNotifications } from '@/hooks';
+import { AppNavigator } from './src/navigation';
+import { FirebaseAuthWrapper } from './src/components/auth/FirebaseAuthWrapper';
+import { ErrorBoundary } from './src/components/common';
+import { useNotifications } from './src/hooks';
 
 export default function App() {
   const { requestPermissions } = useNotifications();

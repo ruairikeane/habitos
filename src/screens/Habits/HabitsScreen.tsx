@@ -2,10 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { useScrollToTop } from '@/navigation/TabNavigator';
-import type { HabitsScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { useScrollToTop } from '../../navigation/TabNavigator';
+import type { HabitsScreenProps } from '../../types';
 
 export function HabitsScreen({ navigation }: HabitsScreenProps) {
   const { 

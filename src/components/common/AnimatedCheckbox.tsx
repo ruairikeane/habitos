@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing } from '@/styles';
+import { colors, spacing } from '../../styles';
 
 interface AnimatedCheckboxProps {
   isCompleted: boolean;

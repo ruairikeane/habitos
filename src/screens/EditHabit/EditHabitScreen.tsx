@@ -10,11 +10,11 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { useNotifications } from '@/hooks';
-import { HabitFrequency } from '@/types';
-import type { EditHabitScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { useNotifications } from '../../hooks';
+import { HabitFrequency } from '../../types';
+import type { EditHabitScreenProps } from '../../types';
 
 export function EditHabitScreen({ route, navigation }: EditHabitScreenProps) {
   const { habitId } = route.params;

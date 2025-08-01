@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing } from '@/styles';
+import { colors, typography, spacing } from '../../styles';
 
 interface StreakCelebrationProps {
   streak: number;

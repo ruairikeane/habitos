@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useNotifications } from '@/hooks';
-import type { NotificationSettingsScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useNotifications } from '../../hooks';
+import type { NotificationSettingsScreenProps } from '../../types';
 
 export function NotificationSettingsScreen({ navigation }: NotificationSettingsScreenProps) {
   const { 

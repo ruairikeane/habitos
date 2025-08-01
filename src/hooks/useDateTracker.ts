@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getTodayLocalDate } from '@/utils/dateHelpers';
+import { getTodayLocalDate } from '../utils/dateHelpers';
 
 interface DateTrackerResult {
   currentDate: string;

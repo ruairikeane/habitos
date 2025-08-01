@@ -1,21 +1,21 @@
 // React import not needed for this file
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { colors, typography } from '@/styles';
-import type { RootStackParamList } from '@/types';
+import { colors, typography } from '../styles';
+import type { RootStackParamList } from '../types';
 
 import { TabNavigator } from './TabNavigator';
-import { AddHabitScreen, HabitDetailScreen, EditHabitScreen } from '@/screens';
-import { NotificationSettingsScreen } from '@/screens/Settings/NotificationSettingsScreen';
-import { BiometricSettingsScreen } from '@/screens/Settings/BiometricSettingsScreen';
-import { TipsLibraryScreen } from '@/screens/Settings/TipsLibraryScreen';
-import { AppearanceScreen } from '@/screens/Settings/AppearanceScreen';
-import { DataBackupScreen } from '@/screens/Settings/DataBackupScreen';
-import { BackupManagementScreen } from '@/screens/Settings/BackupManagementScreen';
-import { ProfileScreen } from '@/screens/Settings/ProfileScreen';
-import { HelpSupportScreen } from '@/screens/Settings/HelpSupportScreen';
-import { AboutScreen } from '@/screens/Settings/AboutScreen';
-import { DataSyncScreen } from '@/screens/Settings/DataSyncScreen';
+import { AddHabitScreen, HabitDetailScreen, EditHabitScreen } from '../screens';
+import { NotificationSettingsScreen } from '../screens/Settings/NotificationSettingsScreen';
+import { BiometricSettingsScreen } from '../screens/Settings/BiometricSettingsScreen';
+import { TipsLibraryScreen } from '../screens/Settings/TipsLibraryScreen';
+import { AppearanceScreen } from '../screens/Settings/AppearanceScreen';
+import { DataBackupScreen } from '../screens/Settings/DataBackupScreen';
+import { BackupManagementScreen } from '../screens/Settings/BackupManagementScreen';
+import { ProfileScreen } from '../screens/Settings/ProfileScreen';
+import { HelpSupportScreen } from '../screens/Settings/HelpSupportScreen';
+import { AboutScreen } from '../screens/Settings/AboutScreen';
+import { DataSyncScreen } from '../screens/Settings/DataSyncScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { useScrollToTop } from '@/navigation/TabNavigator';
-import type { SettingsScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { useScrollToTop } from '../../navigation/TabNavigator';
+import type { SettingsScreenProps } from '../../types';
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   // Scroll to top ref

@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { initializeAuth, getReactNativePersistence, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -31,6 +32,13 @@ const validateFirebaseConfig = () => {
     return false;
   }
   
+  // Allow dummy/test values for development
+  const hasValidValues = firebaseConfig.apiKey && firebaseConfig.projectId;
+  if (!hasValidValues) {
+    console.warn('Firebase configuration appears to be empty');
+    return false;
+  }
+  
   return true;
 };
 
@@ -46,7 +54,9 @@ try {
   if (isConfigured) {
     // Initialize Firebase
     app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage)
+    });
     firestore = getFirestore(app);
     storage = getStorage(app);
     

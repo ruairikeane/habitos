@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import type { AboutScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import type { AboutScreenProps } from '../../types';
 
 const APP_VERSION = '1.0.0';
 const BUILD_NUMBER = '1';

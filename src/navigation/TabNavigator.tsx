@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography } from '@/styles';
-import type { TabParamList } from '@/types';
+import { colors, typography } from '../styles';
+import type { TabParamList } from '../types';
 
 // Create context for scroll refs
 export const ScrollToTopContext = createContext<{
@@ -27,11 +27,11 @@ export const useScrollToTop = (tabName: string, scrollFunction: () => void) => {
 };
 
 // Import screens
-import { HomeScreen } from '@/screens/Home/HomeScreen';
-import { HabitsScreen } from '@/screens/Habits/HabitsScreen';
-import { StatisticsScreen } from '@/screens/Statistics/StatisticsScreen';
-import { TipsScreen } from '@/screens/Tips/TipsScreen';
-import { SettingsScreen } from '@/screens/Settings/SettingsScreen';
+import { HomeScreen } from '../screens/Home/HomeScreen';
+import { HabitsScreen } from '../screens/Habits/HabitsScreen';
+import { StatisticsScreen } from '../screens/Statistics/StatisticsScreen';
+import { TipsScreen } from '../screens/Tips/TipsScreen';
+import { SettingsScreen } from '../screens/Settings/SettingsScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FirebaseAuthService } from '@/services/firebase';
-import { OfflineStorageService } from '@/services/storage/offlineStorage';
-import { BiometricService } from '@/services/biometric';
-import { colors, typography, spacing } from '@/styles';
-import type { AuthUser } from '@/services/firebase/authService';
+import { FirebaseAuthService } from '../../services/firebase';
+import { OfflineStorageService } from '../../services/storage/offlineStorage';
+import { BiometricService } from '../../services/biometric';
+import { colors, typography, spacing } from '../../styles';
+import type { AuthUser } from '../../services/firebase/authService';
 
 interface FirebaseAuthWrapperProps {
   children: React.ReactNode;
@@ -19,7 +19,6 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
   const [displayName, setDisplayName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
-  const [offlineMode, setOfflineMode] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricTypeName, setBiometricTypeName] = useState('');
@@ -53,31 +52,10 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
           setLoading(false);
         } else {
           console.log('FirebaseAuthWrapper: No authenticated user');
-          
-          // Try biometric authentication if available and enabled
-          if (capabilities.isAvailable && await BiometricService.isBiometricEnabled()) {
-            console.log('FirebaseAuthWrapper: Attempting biometric auto-login');
-            try {
-              const biometricResult = await FirebaseAuthService.authenticateWithBiometrics();
-              
-              if (biometricResult.user) {
-                console.log('FirebaseAuthWrapper: Biometric login successful');
-                setUser(biometricResult.user);
-                setLoading(false);
-                return;
-              } else {
-                console.log('FirebaseAuthWrapper: Biometric login failed:', biometricResult.error);
-              }
-            } catch (error) {
-              console.error('FirebaseAuthWrapper: Biometric login error:', error);
-            }
-          }
-          
           setLoading(false);
         }
       } catch (error) {
         console.error('FirebaseAuthWrapper: Auth initialization failed:', error);
-        setOfflineMode(true);
         setLoading(false);
       }
     };
@@ -90,9 +68,6 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
       setUser(user);
       setLoading(false);
       
-      if (user) {
-        setOfflineMode(false);
-      }
     });
 
     return unsubscribe;
@@ -167,33 +142,6 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
     }
   };
 
-  const handleOfflineMode = async () => {
-    try {
-      setOfflineMode(true);
-      
-      // Load any existing offline data
-      const offlineData = await OfflineStorageService.loadOfflineData();
-      console.log(`FirebaseAuthWrapper: Loaded ${offlineData.habits.length} offline habits`);
-      
-      // Create a temporary offline user
-      const tempUser = {
-        uid: 'offline_user',
-        email: email || 'offline@local.com',
-        displayName: 'Offline User'
-      } as AuthUser;
-      
-      setUser(tempUser);
-      
-      Alert.alert(
-        'Offline Mode', 
-        'Your data will be saved locally. Sign in when you have internet to sync across devices.',
-        [{ text: 'Continue', style: 'default' }]
-      );
-    } catch (error) {
-      console.error('FirebaseAuthWrapper: Offline mode error:', error);
-      Alert.alert('Error', 'Failed to start offline mode');
-    }
-  };
 
   const handleBiometricLogin = async () => {
     if (!biometricAvailable) {
@@ -232,32 +180,6 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
     }
   };
 
-  const testFirebaseConnection = async () => {
-    const results = [];
-    
-    const endpoints = [
-      { name: 'Google', url: 'https://www.google.com' },
-      { name: 'Firebase Auth', url: 'https://identitytoolkit.googleapis.com/v1/accounts:signUp' },
-      { name: 'Firebase Firestore', url: `https://firestore.googleapis.com/v1/projects/habitos-firebase/databases/(default)/documents` },
-      { name: 'GitHub API', url: 'https://api.github.com' }
-    ];
-    
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(endpoint.url, { 
-          method: 'GET',
-          headers: endpoint.name.includes('Firebase') ? {
-            'Content-Type': 'application/json'
-          } : {}
-        });
-        results.push(`${endpoint.name}: ${response.ok ? '✅ OK' : '❌ FAIL'} (${response.status})`);
-      } catch (error) {
-        results.push(`${endpoint.name}: ❌ BLOCKED (${(error as Error).message})`);
-      }
-    }
-    
-    Alert.alert('Network Diagnostic', results.join('\n'));
-  };
 
   if (loading) {
     return (
@@ -364,30 +286,6 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
                 }
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={testFirebaseConnection}
-            >
-              <Text style={styles.testText}>Network Diagnostic</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.authButton, { backgroundColor: colors.secondary }]}
-              onPress={handleOfflineMode}
-            >
-              <Text style={styles.authButtonText}>
-                Continue Offline
-              </Text>
-            </TouchableOpacity>
-
-            {offlineMode && (
-              <View style={styles.offlineIndicator}>
-                <Text style={styles.offlineText}>
-                  🔴 Offline Mode - Data saved locally
-                </Text>
-              </View>
-            )}
           </View>
         </View>
       </SafeAreaView>
@@ -458,32 +356,6 @@ const styles = StyleSheet.create({
   switchText: {
     color: colors.primary,
     fontSize: 14,
-  },
-  testButton: {
-    alignItems: 'center',
-    padding: spacing.sm,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-  },
-  testText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-  offlineIndicator: {
-    alignItems: 'center',
-    padding: spacing.sm,
-    marginTop: spacing.md,
-    backgroundColor: colors.warning + '20',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.warning,
-  },
-  offlineText: {
-    color: colors.warning,
-    fontSize: 14,
-    fontWeight: '500',
   },
   biometricSection: {
     marginBottom: spacing.md,

@@ -1,7 +1,7 @@
-import { FirebaseDatabaseService } from '@/services/firebase/databaseService';
-import { memoizeAsync, analyticsCache } from '@/utils/memoization';
-import { getTodayLocalDate, getLocalDateString } from '@/utils/dateHelpers';
-import type { HabitEntry, HabitStats, HabitStreak } from '@/types';
+import { FirebaseDatabaseService } from '../../services/firebase/databaseService';
+import { memoizeAsync, analyticsCache } from '../../utils/memoization';
+import { getTodayLocalDate, getLocalDateString } from '../../utils/dateHelpers';
+import type { HabitEntry, HabitStats, HabitStreak } from '../../types';
 
 export class HabitAnalyticsService {
   /**
@@ -18,7 +18,7 @@ export class HabitAnalyticsService {
       return HabitAnalyticsService._calculateStreaks(habitId, userId);
     },
     (habitId: string, userId: string) => `streaks_${habitId}_${userId}`,
-    10 * 1000 // 10 seconds cache for faster debugging
+    1000 // 1 second cache to ensure fresh data
   );
 
   /**
@@ -126,7 +126,7 @@ export class HabitAnalyticsService {
     },
     (habitId: string, userId: string, month?: number, year?: number) => 
       `stats_${habitId}_${userId}_${month ?? 'current'}_${year ?? 'current'}`,
-    10 * 1000 // 10 seconds cache for faster debugging
+    1000 // 1 second cache to ensure fresh data
   );
 
   /**
@@ -169,14 +169,9 @@ export class HabitAnalyticsService {
       const completionRate = recentEntries.length > 0 ? recentCompletions / 30 : 0;
 
       // Last seven days completion
-      console.log('\n📅 === CALCULATING LAST 7 DAYS ===');
-      console.log('Analytics: Calculating last 7 days for habit:', habitId);
-      console.log('Analytics: Total completed entries available:', completedEntries.length);
-      
       const lastSevenDays: boolean[] = [];
       const today = new Date();
       
-      console.log('Analytics: Checking each of the last 7 days...');
       for (let i = 6; i >= 0; i--) {
         const checkDate = new Date(today);
         checkDate.setDate(checkDate.getDate() - i);
@@ -184,28 +179,7 @@ export class HabitAnalyticsService {
         
         const completed = completedEntries.some(e => e.entry_date === checkDateStr);
         lastSevenDays.push(completed);
-        
-        const dayName = checkDate.toLocaleDateString('en-US', { weekday: 'short' });
-        console.log(`  Day ${7-i} (${dayName} ${checkDateStr}): ${completed ? '✅ COMPLETED' : '❌ Not completed'}`);
       }
-      
-      console.log('\n📊 LAST 7 DAYS RESULT:', lastSevenDays);
-      console.log('Analytics: Days completed:', lastSevenDays.filter(Boolean).length, '/ 7');
-      
-      // Debug: Show what entries we have for comparison
-      if (completedEntries.length > 0) {
-        console.log('\n📝 Available completed entry dates:');
-        completedEntries.slice(0, 10).forEach((entry, index) => {
-          console.log(`  ${index + 1}. ${entry.entry_date} (${entry.is_completed ? 'completed' : 'not completed'})`);
-        });
-        if (completedEntries.length > 10) {
-          console.log(`  ... and ${completedEntries.length - 10} more entries`);
-        }
-      } else {
-        console.log('⚠️ No completed entries found for this habit!');
-      }
-      
-      console.log('📅 === LAST 7 DAYS CALCULATION COMPLETE ===\n');
 
       // Average completions per week
       const weeksOfData = sortedEntries && sortedEntries.length > 0 ? 
@@ -217,13 +191,16 @@ export class HabitAnalyticsService {
       const targetMonth = month ?? now.getMonth();
       const targetYear = year ?? now.getFullYear();
       const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+      const currentDay = now.getDate();
       
       const monthlyCompletions = completedEntries.filter(e => {
         const entryDate = new Date(e.entry_date);
         return entryDate.getMonth() === targetMonth && entryDate.getFullYear() === targetYear;
       }).length;
       
-      const monthlyProgress = monthlyCompletions / daysInMonth;
+      // Calculate progress based on days passed in month (more intuitive)
+      const daysPassedInMonth = Math.min(currentDay, daysInMonth);
+      const monthlyProgress = daysPassedInMonth > 0 ? monthlyCompletions / daysPassedInMonth : 0;
 
       return {
         totalCompletions,

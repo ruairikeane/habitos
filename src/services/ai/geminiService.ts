@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { HabitWithCategory } from '@/types';
+import type { HabitWithCategory } from '../../types';
 
 interface HabitSuggestion {
   name: string;

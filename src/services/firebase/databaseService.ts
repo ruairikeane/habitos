@@ -14,7 +14,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { firestore, COLLECTIONS, handleFirebaseError } from './config';
-import type { Habit, HabitEntry, Category, HabitWithCategory } from '@/types';
+import type { Habit, HabitEntry, Category, HabitWithCategory } from '../../types';
 
 export class FirebaseDatabaseService {
   /**

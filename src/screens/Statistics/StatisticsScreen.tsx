@@ -3,11 +3,11 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import { HabitAnalyticsService } from '@/services/analytics';
-import { useScrollToTop } from '@/navigation/TabNavigator';
-import type { StatisticsScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import { HabitAnalyticsService } from '../../services/analytics';
+import { useScrollToTop } from '../../navigation/TabNavigator';
+import type { StatisticsScreenProps } from '../../types';
 
 export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
   const { habits, categories, habitStats, habitStreaks, loadAllHabitsStats } = useStore();
@@ -73,7 +73,7 @@ export function StatisticsScreen({ navigation }: StatisticsScreenProps) {
       console.log('StatisticsScreen: Loading Firebase analytics data for', habits.length, 'habits');
       
       // Get user ID from store
-      const { FirebaseAuthService } = await import('@/services/firebase');
+      const { FirebaseAuthService } = await import('../../services/firebase');
       const currentUser = await FirebaseAuthService.getCurrentUser();
       if (!currentUser) {
         console.error('No authenticated user found for analytics');

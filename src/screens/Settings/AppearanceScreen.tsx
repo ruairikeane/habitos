@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { useStore } from '@/store';
-import type { AppearanceScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { useStore } from '../../store';
+import type { AppearanceScreenProps } from '../../types';
 
 const THEME_OPTIONS = [
   { id: 'light', name: 'Light', icon: 'sunny', description: 'Always use light theme' },

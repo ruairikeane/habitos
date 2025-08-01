@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, globalStyles, spacing } from '@/styles';
-import { FileBackupService } from '@/services/storage';
-import { useStore } from '@/store';
-import type { BackupManagementScreenProps } from '@/types';
+import { colors, typography, globalStyles, spacing } from '../../styles';
+import { FileBackupService } from '../../services/storage';
+import { useStore } from '../../store';
+import type { BackupManagementScreenProps } from '../../types';
 
 interface BackupItem {
   filename: string;

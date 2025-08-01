@@ -1,68 +1,37 @@
 {
   "expo": {
     "name": "Habitos",
-    "slug": "habitos-habit-tracker",
+    "slug": "habitos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "description": "A beautiful, science-based habit tracking app with educational guidance and progress visualization. Build sustainable habits with habit stacking, implementation intentions, and real-time analytics.",
-    "primaryColor": "#8B7355",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F8F6F3"
-    },
+    "newArchEnabled": false,
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.habitapp.habitos",
+      "bundleIdentifier": "com.ruairi.habitos",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "This app does not use the camera.",
         "NSLocationWhenInUseUsageDescription": "This app does not use location.",
         "NSMicrophoneUsageDescription": "This app does not use the microphone.",
+        "NSFaceIDUsageDescription": "Habitos uses Face ID to securely log you into your account and protect your habit data",
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "associatedDomains": [
-        "applinks:habitos.app"
-      ],
-      "config": {
-        "googleMapsApiKey": ""
       }
     },
     "android": {
-      "package": "com.habitapp.habitos",
+      "package": "com.ruairi.habitos",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F8F6F3"
       },
-      "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.USE_EXACT_ALARM",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.VIBRATE"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "habitos.app"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -70,21 +39,13 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-secure-store",
-      [
-        "expo-notifications",
-        {
-          "color": "#8B7355",
-          "defaultChannel": "default"
-        }
-      ]
+      "expo-secure-store"
     ],
     "scheme": "habitos",
     "extra": {
       "eas": {
-        "projectId": "12ffa894-5368-49f1-9ca2-b86ad907a0f3"
+        "projectId": "your_eas_project_id"
       }
-    },
-    "owner": "ruairikeane"
+    }
   }
 }
