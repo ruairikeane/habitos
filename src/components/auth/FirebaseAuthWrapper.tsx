@@ -129,14 +129,14 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
     } catch (error: any) {
       console.error('FirebaseAuthWrapper: Auth error:', error);
       
-      let errorMessage = 'Authentication failed';
-      if (error.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your connection.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      Alert.alert('Authentication Error', errorMessage);
+      // Show debug info on screen
+      Alert.alert('Auth Debug', 
+        `Error: ${error.message || 'Unknown error'}\n` +
+        `Code: ${error.code || 'No code'}\n` + 
+        `Auth available: ${!!auth}\n` +
+        `Firestore available: ${!!firestore}\n` +
+        `Project ID: ${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'NOT SET'}`
+      );
     } finally {
       setAuthLoading(false);
     }
@@ -180,6 +180,23 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert('Email Required', 'Please enter your email address first.');
+      return;
+    }
+
+    try {
+      const result = await FirebaseAuthService.sendPasswordResetEmail(email.trim());
+      if (result.error) {
+        Alert.alert('Reset Failed', result.error);
+      } else {
+        Alert.alert('Reset Email Sent', `A password reset email has been sent to ${email.trim()}`);
+      }
+    } catch (error: any) {
+      Alert.alert('Reset Failed', error.message || 'Failed to send reset email');
+    }
+  };
 
   if (loading) {
     return (
@@ -239,11 +256,14 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
             {!isSignUp && biometricAvailable && (
               <View style={styles.biometricSection}>
                 <TouchableOpacity
-                  style={styles.switchButton}
+                  style={styles.biometricToggle}
                   onPress={() => setEnableBiometricAfterLogin(!enableBiometricAfterLogin)}
                 >
-                  <Text style={styles.switchText}>
-                    {enableBiometricAfterLogin ? '✅' : '☐'} Enable {biometricTypeName} for future logins
+                  <View style={[styles.checkbox, enableBiometricAfterLogin && styles.checkboxChecked]}>
+                    {enableBiometricAfterLogin && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                  <Text style={styles.biometricText}>
+                    Enable {biometricTypeName} for future logins
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -265,12 +285,23 @@ export function FirebaseAuthWrapper({ children }: FirebaseAuthWrapperProps) {
 
             {!isSignUp && biometricAvailable && biometricEnabled && (
               <TouchableOpacity
-                style={[styles.authButton, { backgroundColor: colors.success }]}
+                style={[styles.authButton, styles.biometricButton]}
                 onPress={handleBiometricLogin}
                 disabled={authLoading}
               >
                 <Text style={styles.authButtonText}>
-                  🔒 Sign in with {biometricTypeName}
+                  Sign in with {biometricTypeName}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {!isSignUp && (
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                onPress={handleForgotPassword}
+              >
+                <Text style={styles.forgotPasswordText}>
+                  Forgot Password?
                 </Text>
               </TouchableOpacity>
             )}
@@ -359,5 +390,47 @@ const styles = StyleSheet.create({
   },
   biometricSection: {
     marginBottom: spacing.md,
+  },
+  biometricToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 4,
+    marginRight: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+  },
+  checkmark: {
+    color: colors.surface,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  biometricText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    flex: 1,
+  },
+  biometricButton: {
+    backgroundColor: colors.success,
+  },
+  forgotPasswordButton: {
+    alignItems: 'center',
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  forgotPasswordText: {
+    color: colors.primary,
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

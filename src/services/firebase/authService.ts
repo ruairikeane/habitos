@@ -184,6 +184,22 @@ export class FirebaseAuthService {
   }
 
   /**
+   * Send password reset email
+   */
+  static async sendPasswordResetEmail(email: string): Promise<{ error: string | null }> {
+    try {
+      if (!auth) {
+        throw new Error('Firebase not initialized');
+      }
+
+      await sendPasswordResetEmail(auth, email);
+      return { error: null };
+    } catch (error) {
+      return { error: handleFirebaseError(error) };
+    }
+  }
+
+  /**
    * Update user password
    */
   static async updatePassword(newPassword: string): Promise<{ error: string | null }> {

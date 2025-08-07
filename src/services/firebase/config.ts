@@ -52,11 +52,28 @@ try {
   const isConfigured = validateFirebaseConfig();
   
   if (isConfigured) {
+    console.log('Initializing Firebase with config:', {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain,
+      hasApiKey: !!firebaseConfig.apiKey
+    });
+    
     // Initialize Firebase
     app = initializeApp(firebaseConfig);
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
-    });
+    
+    try {
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage)
+      });
+      console.log('Firebase Auth initialized successfully');
+    } catch (authError) {
+      console.error('Firebase Auth initialization error:', authError);
+      // Fallback to getAuth if initializeAuth fails
+      const { getAuth } = require('firebase/auth');
+      auth = getAuth(app);
+      console.log('Using fallback getAuth');
+    }
+    
     firestore = getFirestore(app);
     storage = getStorage(app);
     
