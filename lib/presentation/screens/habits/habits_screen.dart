@@ -227,7 +227,8 @@ class _HabitsScreenState extends State<HabitsScreen> {
               ),
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }

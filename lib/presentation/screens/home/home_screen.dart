@@ -320,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 1,
               ),
             ),
-          child: Column(
+            child: Column(
             children: [
               Row(
                 children: [
@@ -431,7 +431,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }
