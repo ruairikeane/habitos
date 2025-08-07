@@ -1,1 +1,0 @@
-export { TipsScreen } from './TipsScreen';

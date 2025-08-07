@@ -4,6 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/habits_provider.dart';
 import 'presentation/providers/settings_provider.dart';
+import 'presentation/providers/scroll_provider.dart';
 import 'navigation/app_router.dart';
 
 class HabitosApp extends StatelessWidget {
@@ -16,6 +17,7 @@ class HabitosApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => HabitsProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ScrollProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {

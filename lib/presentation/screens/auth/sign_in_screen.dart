@@ -94,6 +94,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       keyboardType: TextInputType.emailAddress,
                       validator: Validators.validateEmail,
                       prefixIcon: Icons.email_outlined,
+                      textCapitalization: TextCapitalization.none,
                     ),
                     
                     SizedBox(height: AppSpacing.lg),
@@ -105,6 +106,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       obscureText: _obscurePassword,
                       validator: Validators.validatePassword,
                       prefixIcon: Icons.lock_outline,
+                      textCapitalization: TextCapitalization.none,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility : Icons.visibility_off,
@@ -142,9 +144,46 @@ class _SignInScreenState extends State<SignInScreen> {
                       text: _isSignUp ? 'Create Account' : 'Sign In',
                       onPressed: authProvider.isLoading ? null : _handleSubmit,
                       isLoading: authProvider.isLoading,
+                      backgroundColor: AppColors.signInPrimary,
                     ),
                     
                     SizedBox(height: AppSpacing.lg),
+                    
+                    // Biometric Sign In Button
+                    if (!_isSignUp)
+                      FutureBuilder<bool>(
+                        future: authProvider.canUseBiometricSignIn(),
+                        builder: (context, snapshot) {
+                          if (snapshot.data == true) {
+                            return Column(
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: authProvider.isLoading ? null : () async {
+                                    await authProvider.signInWithBiometrics();
+                                  },
+                                  icon: Icon(Icons.fingerprint, color: AppColors.signInPrimary),
+                                  label: Text(
+                                    'Sign in with Biometrics',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.signInPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: AppColors.signInPrimary),
+                                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: AppSpacing.lg),
+                              ],
+                            );
+                          }
+                          return SizedBox.shrink();
+                        },
+                      ),
                     
                     // Switch Mode Button
                     TextButton(
@@ -159,7 +198,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             ? 'Already have an account? Sign In'
                             : 'Don\'t have an account? Sign Up',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
+                          color: AppColors.signInPrimary,
                         ),
                       ),
                     ),

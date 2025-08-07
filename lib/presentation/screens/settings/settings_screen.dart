@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../providers/scroll_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,9 +15,25 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSettings();
+    });
+  }
+
+  void _loadSettings() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    
+    if (authProvider.user != null) {
+      settingsProvider.loadSettings(authProvider.user!.id);
+    }
+  }
+
   Future<void> _loadData() async {
-    // TODO: Refresh settings data
-    await Future.delayed(const Duration(milliseconds: 300));
+    _loadSettings();
   }
 
   @override
@@ -35,14 +53,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            // Account Section
-            _buildSectionHeader('Account'),
+        child: Consumer<ScrollProvider>(
+          builder: (context, scrollProvider, child) {
+            final scrollController = scrollProvider.getScrollController('settings');
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: EdgeInsets.all(AppSpacing.screenPadding),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                // Account Section
+                _buildSectionHeader('Account'),
             _buildSettingsTile(
               icon: Icons.person_outline,
               title: 'Profile',
@@ -60,17 +82,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Manage reminder settings',
               onTap: () => context.push('/settings/notifications'),
             ),
-            _buildSettingsTile(
-              icon: Icons.fingerprint,
-              title: 'Biometric Authentication',
-              subtitle: 'Use Face ID or Touch ID',
-              trailing: Switch(
-                value: false, // TODO: Connect to settings provider
-                onChanged: (value) {
-                  // TODO: Update biometric setting
-                },
-                activeColor: AppColors.primary,
-              ),
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                return FutureBuilder<String>(
+                  future: settingsProvider.biometricDisplayName,
+                  builder: (context, snapshot) {
+                    final displayName = snapshot.data ?? 'Biometric Authentication';
+                    
+                    return _buildSettingsTile(
+                      icon: Icons.fingerprint,
+                      title: displayName,
+                      subtitle: 'Use $displayName for quick sign-in',
+                      trailing: FutureBuilder<bool>(
+                        future: settingsProvider.isBiometricAvailable,
+                        builder: (context, availableSnapshot) {
+                          final isAvailable = availableSnapshot.data ?? false;
+                          
+                          return Switch(
+                            value: isAvailable ? settingsProvider.biometricEnabled : false,
+                            onChanged: isAvailable ? (value) async {
+                              final success = await settingsProvider.updateBiometricEnabled(value);
+                              if (!success && mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      value 
+                                        ? 'Failed to enable $displayName. Please try again.' 
+                                        : 'Failed to disable $displayName.',
+                                    ),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                              }
+                            } : null,
+                            activeColor: AppColors.primary,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
             ),
             _buildSettingsTile(
               icon: Icons.palette_outlined,
@@ -125,10 +177,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             SizedBox(height: AppSpacing.sectionSpacing),
             
-            // Sign Out
-            _buildSignOutButton(),
-            ],
-          ),
+                // Sign Out
+                _buildSignOutButton(),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -212,17 +266,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             icon: Icon(
               Icons.logout,
-              color: AppColors.error,
+              color: AppColors.darkEarthyOrange,
             ),
             label: Text(
               authProvider.isLoading ? 'Signing Out...' : 'Sign Out',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.error,
+                color: AppColors.darkEarthyOrange,
                 fontWeight: FontWeight.w600,
               ),
             ),
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.error),
+              side: BorderSide(color: AppColors.darkEarthyOrange),
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -253,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 'Sign Out',
-                style: TextStyle(color: AppColors.error),
+                style: TextStyle(color: AppColors.darkEarthyOrange),
               ),
             ),
           ],

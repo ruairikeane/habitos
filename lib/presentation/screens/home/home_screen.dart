@@ -6,6 +6,7 @@ import '../../../core/theme/spacing.dart';
 import '../../../core/constants/tips.dart';
 import '../../providers/habits_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/scroll_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,10 +23,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadData() {
+    print('🏠 HOME: Loading data...');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final habitsProvider = Provider.of<HabitsProvider>(context, listen: false);
+      print('🏠 HOME: Calling loadHabits()');
       habitsProvider.loadHabits();
       habitsProvider.loadCategories();
+    });
+  }
+  
+  void _refreshOnFocus() {
+    // Safe way to refresh when screen becomes visible
+    Future.delayed(Duration.zero, () {
+      final habitsProvider = Provider.of<HabitsProvider>(context, listen: false);
+      habitsProvider.loadHabits();
     });
   }
 
@@ -35,6 +46,9 @@ class _HomeScreenState extends State<HomeScreen> {
       habitsProvider.loadHabits(),
       habitsProvider.loadCategories(),
     ]);
+    
+    // Also refresh focus method
+    _refreshOnFocus();
     
     // Show feedback
     if (mounted) {
@@ -91,28 +105,34 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Daily Tip (moved to top)
-              _buildDailyTip(),
-              
-              SizedBox(height: AppSpacing.sectionSpacing),
-              
-              // Today's Habits (moved to middle)
-              _buildTodaysHabits(),
-              
-              SizedBox(height: AppSpacing.sectionSpacing),
-              
-              // Today's Progress Card (moved to bottom)
-              _buildProgressCard(),
-              
-              SizedBox(height: AppSpacing.xl),
-            ],
-          ),
+        child: Consumer<ScrollProvider>(
+          builder: (context, scrollProvider, child) {
+            final scrollController = scrollProvider.getScrollController('home');
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: EdgeInsets.all(AppSpacing.screenPadding),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Daily Tip (moved to top)
+                  _buildDailyTip(),
+                  
+                  SizedBox(height: AppSpacing.sectionSpacing),
+                  
+                  // Today's Habits (moved to middle)
+                  _buildTodaysHabits(),
+                  
+                  SizedBox(height: AppSpacing.sectionSpacing),
+                  
+                  // Today's Progress Card (moved to bottom)
+                  _buildProgressCard(),
+                  
+                  SizedBox(height: AppSpacing.xl),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -161,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           '${completedHabits.length} of ${todaysHabits.length}',
-                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
@@ -178,13 +198,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   // Progress Circle
                   SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: CircularProgressIndicator(
-                      value: completionRate,
-                      strokeWidth: 8,
-                      backgroundColor: AppColors.divider,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
+                    width: 100,
+                    child: Center(
+                      child: SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: CircularProgressIndicator(
+                          value: completionRate,
+                          strokeWidth: 8,
+                          backgroundColor: AppColors.divider,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -280,17 +305,21 @@ class _HomeScreenState extends State<HomeScreen> {
         final streak = _calculateHabitStreak(habit.id);
         final streakMilestone = _getStreakMilestone(streak);
 
-        return Container(
-          margin: EdgeInsets.only(bottom: AppSpacing.sm),
-          padding: EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(
-              color: isCompleted ? AppColors.success : AppColors.border,
-              width: 1,
+        return GestureDetector(
+          onTap: () {
+            context.push('/habits/detail/${habit.id}');
+          },
+          child: Container(
+            margin: EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              border: Border.all(
+                color: isCompleted ? AppColors.success : AppColors.border,
+                width: 1,
+              ),
             ),
-          ),
           child: Column(
             children: [
               Row(
@@ -302,9 +331,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 24,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isCompleted ? AppColors.success : AppColors.surface,
+                        color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.surface,
                         border: Border.all(
-                          color: isCompleted ? AppColors.success : AppColors.textMuted,
+                          color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.textMuted,
                           width: 2,
                         ),
                       ),
@@ -361,13 +390,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   
-                  SizedBox(width: AppSpacing.sm),
-                  
-                  Icon(
-                    habit.icon,
-                    color: habit.color,
-                    size: AppSpacing.iconSm,
-                  ),
                 ],
               ),
               

@@ -2,29 +2,27 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug iOS",
-      "cwd": "${workspaceFolder}",
-      "type": "reactnative",
+      "name": "Flutter (Debug)",
       "request": "launch",
-      "platform": "ios",
-      "target": "simulator",
-      "iosSimulatorTarget": "iPhone 16 Pro",
-      "sourceMaps": true,
-      "outDir": "${workspaceFolder}/.vscode/.react"
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--debug"
+      ]
     },
     {
-      "name": "Debug Android",
-      "cwd": "${workspaceFolder}",
-      "type": "reactnative",
+      "name": "Flutter (Profile)",
       "request": "launch",
-      "platform": "android"
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "profile"
     },
     {
-      "name": "Attach to packager",
-      "cwd": "${workspaceFolder}",
-      "type": "reactnative",
-      "request": "attach"
+      "name": "Flutter (Release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "release"
     }
   ]
 }
-EOF < /dev/null

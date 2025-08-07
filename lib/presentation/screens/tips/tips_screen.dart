@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
 import '../../../core/constants/tips.dart';
+import '../../providers/scroll_provider.dart';
 
 class TipsScreen extends StatefulWidget {
   const TipsScreen({super.key});
@@ -57,13 +59,19 @@ class _TipsScreenState extends State<TipsScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadData,
-              child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: _getFilteredTips().length,
-                itemBuilder: (context, index) {
-                  final tip = _getFilteredTips()[index];
-                  return _buildTipCard(tip);
+              child: Consumer<ScrollProvider>(
+                builder: (context, scrollProvider, child) {
+                  final scrollController = scrollProvider.getScrollController('tips');
+                  return ListView.builder(
+                    controller: scrollController,
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: _getFilteredTips().length,
+                    itemBuilder: (context, index) {
+                      final tip = _getFilteredTips()[index];
+                      return _buildTipCard(tip);
+                    },
+                  );
                 },
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
 import '../../providers/habits_provider.dart';
+import '../../providers/scroll_provider.dart';
 
 class HabitsScreen extends StatefulWidget {
   const HabitsScreen({super.key});
@@ -13,6 +14,21 @@ class HabitsScreen extends StatefulWidget {
 }
 
 class _HabitsScreenState extends State<HabitsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Use postFrameCallback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDataSafe();
+    });
+  }
+  
+  Future<void> _loadDataSafe() async {
+    final habitsProvider = Provider.of<HabitsProvider>(context, listen: false);
+    await habitsProvider.loadHabits();
+    await habitsProvider.loadCategories();
+  }
+  
   Future<void> _loadData() async {
     final habitsProvider = Provider.of<HabitsProvider>(context, listen: false);
     await habitsProvider.loadHabits();
@@ -60,7 +76,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
               onRefresh: _loadData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
+                child: SizedBox(
                   height: MediaQuery.of(context).size.height - 200,
                   child: Center(
                     child: Padding(
@@ -107,13 +123,19 @@ class _HabitsScreenState extends State<HabitsScreen> {
 
           return RefreshIndicator(
             onRefresh: _loadData,
-            child: ListView.builder(
-              padding: EdgeInsets.all(AppSpacing.screenPadding),
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: habits.length,
-              itemBuilder: (context, index) {
-                final habit = habits[index];
-                return _buildHabitCard(habit);
+            child: Consumer<ScrollProvider>(
+              builder: (context, scrollProvider, child) {
+                final scrollController = scrollProvider.getScrollController('habits');
+                return ListView.builder(
+                  controller: scrollController,
+                  padding: EdgeInsets.all(AppSpacing.screenPadding),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: habits.length,
+                  itemBuilder: (context, index) {
+                    final habit = habits[index];
+                    return _buildHabitCard(habit);
+                  },
+                );
               },
             ),
           );
@@ -127,22 +149,26 @@ class _HabitsScreenState extends State<HabitsScreen> {
       builder: (context, habitsProvider, child) {
         final isCompleted = habitsProvider.isHabitCompletedToday(habit.id);
 
-        return Container(
-          margin: EdgeInsets.only(bottom: AppSpacing.md),
-          padding: EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                offset: const Offset(0, 1),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
+        return GestureDetector(
+          onTap: () {
+            context.push('/habits/detail/${habit.id}');
+          },
+          child: Container(
+            margin: EdgeInsets.only(bottom: AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  offset: const Offset(0, 1),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
               GestureDetector(
                 onTap: () => habitsProvider.toggleHabitCompletion(habit.id),
                 child: Container(
@@ -150,9 +176,9 @@ class _HabitsScreenState extends State<HabitsScreen> {
                   height: 28,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isCompleted ? AppColors.success : AppColors.surface,
+                    color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.surface,
                     border: Border.all(
-                      color: isCompleted ? AppColors.success : AppColors.textMuted,
+                      color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.textMuted,
                       width: 2,
                     ),
                   ),
@@ -196,7 +222,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
               
               Icon(
                 habit.icon,
-                color: habit.color,
+                color: AppColors.getCategoryColor(habit.categoryId ?? 'general'),
                 size: AppSpacing.iconMd,
               ),
             ],

@@ -1,7 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user.dart';
+import '../../data/services/biometric_service.dart';
 
 class SettingsProvider with ChangeNotifier {
+  final BiometricService _biometricService = BiometricService();
+  
   UserSettings? _settings;
   bool _isLoading = false;
   String? _errorMessage;
@@ -14,6 +18,10 @@ class SettingsProvider with ChangeNotifier {
   bool get notificationsEnabled => _settings?.notificationsEnabled ?? true;
   String get theme => _settings?.theme ?? 'system';
   String? get defaultReminderTime => _settings?.defaultReminderTime;
+
+  // Biometric helpers
+  Future<bool> get isBiometricAvailable => _biometricService.isBiometricAvailable();
+  Future<String> get biometricDisplayName => _biometricService.getBiometricDisplayName();
 
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -34,14 +42,21 @@ class SettingsProvider with ChangeNotifier {
     try {
       _setLoading(true);
       
-      // TODO: Load from SharedPreferences and Firebase
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Load biometric setting from device
+      final biometricEnabled = await _biometricService.isBiometricEnabled();
+      
+      // Load other settings from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+      final theme = prefs.getString('theme') ?? 'system';
+      final reminderTime = prefs.getString('default_reminder_time');
       
       _settings = UserSettings(
         userId: userId,
-        biometricEnabled: false,
-        notificationsEnabled: true,
-        theme: 'system',
+        biometricEnabled: biometricEnabled,
+        notificationsEnabled: notificationsEnabled,
+        theme: theme,
+        defaultReminderTime: reminderTime,
         updatedAt: DateTime.now(),
       );
       
@@ -52,27 +67,33 @@ class SettingsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateBiometricEnabled(bool enabled) async {
+  Future<bool> updateBiometricEnabled(bool enabled) async {
     try {
-      if (_settings == null) return;
+      if (_settings == null) return false;
       
       _setLoading(true);
       
-      final updatedSettings = _settings!.copyWith(
-        biometricEnabled: enabled,
-        updatedAt: DateTime.now(),
-      );
+      // Use biometric service to enable/disable
+      final success = await _biometricService.setBiometricEnabled(enabled);
       
-      // TODO: Save to SharedPreferences and Firebase
-      await Future.delayed(const Duration(milliseconds: 200));
-      
-      _settings = updatedSettings;
-      
-      _setLoading(false);
-      notifyListeners();
+      if (success) {
+        final updatedSettings = _settings!.copyWith(
+          biometricEnabled: enabled,
+          updatedAt: DateTime.now(),
+        );
+        
+        _settings = updatedSettings;
+        _setLoading(false);
+        notifyListeners();
+        return true;
+      } else {
+        _setLoading(false);
+        return false;
+      }
     } catch (e) {
       _setError('Failed to update biometric setting: ${e.toString()}');
       _setLoading(false);
+      return false;
     }
   }
 

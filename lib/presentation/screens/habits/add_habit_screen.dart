@@ -7,6 +7,7 @@ import '../../../core/constants/categories.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/habit.dart';
 import '../../providers/habits_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 
@@ -87,6 +88,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                 label: 'Enter habit name',
                 validator: Validators.validateRequired,
                 prefixIcon: Icons.edit,
+                textCapitalization: TextCapitalization.words,
               ),
               
               SizedBox(height: AppSpacing.sectionSpacing),
@@ -163,31 +165,85 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        children: defaultCategories.map((category) {
-          final isSelected = _selectedCategory == category.id;
-          return ListTile(
-            leading: Icon(
-              category.icon,
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
+      child: DropdownButtonFormField<String>(
+        value: _selectedCategory,
+        decoration: InputDecoration(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          border: InputBorder.none,
+        ),
+        dropdownColor: AppColors.surface,
+        icon: Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+        isExpanded: true,
+        items: defaultCategories.map((category) {
+          return DropdownMenuItem<String>(
+            value: category.id,
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: category.color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Icon(
+                    category.icon,
+                    size: 16,
+                    color: category.color,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  category.name,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            title: Text(
-              category.name,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-            trailing: isSelected
-                ? Icon(Icons.check, color: AppColors.primary)
-                : null,
-            onTap: () {
-              setState(() {
-                _selectedCategory = category.id;
-              });
-            },
           );
         }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selectedCategory = value;
+            });
+          }
+        },
+        selectedItemBuilder: (context) {
+          return defaultCategories.map((category) {
+            return Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: category.color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Icon(
+                    category.icon,
+                    size: 16,
+                    color: category.color,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    category.name,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            );
+          }).toList();
+        },
       ),
     );
   }
@@ -204,9 +260,9 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 6,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
+          crossAxisCount: 8,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
         ),
         itemCount: _habitIcons.length,
         itemBuilder: (context, index) {
@@ -229,7 +285,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
               child: Icon(
                 icon,
                 color: isSelected ? AppColors.primary : AppColors.textMuted,
-                size: 30,
+                size: 24,
               ),
             ),
           );
@@ -344,11 +400,12 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       categoryId: _selectedCategory,
       icon: _selectedIcon,
       color: selectedCategoryData.color,
-      frequency: _frequency,
+      frequency: HabitFrequency.fromString(_frequency),
       reminderTime: _reminderTime,
       isActive: true,
       createdAt: DateTime.now(),
-      userId: 'current-user-id', // TODO: Get from auth provider
+      updatedAt: DateTime.now(),
+      userId: Provider.of<AuthProvider>(context, listen: false).user?.id ?? 'anonymous'
     );
 
     final habitsProvider = Provider.of<HabitsProvider>(context, listen: false);

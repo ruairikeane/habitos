@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum HabitFrequency {
   daily('daily'),
@@ -128,6 +129,50 @@ class Habit {
     };
   }
 
+  // Firestore serialization methods
+  factory Habit.fromFirestore(Map<String, dynamic> data) {
+    return Habit(
+      id: data['id'] as String,
+      userId: data['userId']?.toString() ?? '',
+      name: data['name']?.toString() ?? 'Unnamed Habit',
+      description: data['description']?.toString(),
+      categoryId: data['categoryId']?.toString() ?? 'general',
+      createdAt: _parseFirestoreDate(data['createdAt']),
+      updatedAt: _parseFirestoreDate(data['updatedAt']),
+      isActive: data['isActive'] as bool? ?? true,
+      reminderTime: data['reminderTime'] != null 
+          ? _parseTimeOfDay(data['reminderTime'].toString())
+          : null,
+      frequency: HabitFrequency.fromString(data['frequency']?.toString() ?? 'daily'),
+      customFrequency: data['customFrequency'] != null
+          ? CustomFrequency.fromJson(data['customFrequency'] as Map<String, dynamic>)
+          : null,
+      color: data['color'] != null ? Color(data['color'] as int) : const Color(0xFF7A8471),
+      icon: data['icon'] != null ? _parseIconData(data['icon'] as String) : Icons.check_circle_outline,
+      habitStacking: data['habitStacking']?.toString(),
+      implementationIntention: data['implementationIntention']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'userId': userId,
+      'name': name,
+      if (description != null) 'description': description,
+      'categoryId': categoryId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'isActive': isActive,
+      if (reminderTime != null) 'reminderTime': _formatTimeOfDay(reminderTime!),
+      'frequency': frequency.value,
+      if (customFrequency != null) 'customFrequency': customFrequency!.toJson(),
+      'color': color.value,
+      'icon': _formatIconData(icon),
+      if (habitStacking != null) 'habitStacking': habitStacking,
+      if (implementationIntention != null) 'implementationIntention': implementationIntention,
+    };
+  }
+
   Habit copyWith({
     String? id,
     String? userId,
@@ -162,6 +207,17 @@ class Habit {
       habitStacking: habitStacking ?? this.habitStacking,
       implementationIntention: implementationIntention ?? this.implementationIntention,
     );
+  }
+
+  static DateTime _parseFirestoreDate(dynamic dateValue) {
+    if (dateValue is Timestamp) {
+      return dateValue.toDate();
+    } else if (dateValue is String) {
+      return DateTime.parse(dateValue);
+    } else {
+      // Fallback to current time if neither
+      return DateTime.now();
+    }
   }
 
   static TimeOfDay _parseTimeOfDay(String timeString) {

@@ -9,6 +9,7 @@ class CustomTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool obscureText;
   final String? Function(String?)? validator;
+  final TextCapitalization textCapitalization;
   final Function(String)? onChanged;
   final Function()? onTap;
   final bool readOnly;
@@ -26,6 +27,7 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
     this.validator,
+    this.textCapitalization = TextCapitalization.sentences,
     this.onChanged,
     this.onTap,
     this.readOnly = false,
@@ -54,6 +56,7 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           obscureText: obscureText,
           validator: validator,
+          textCapitalization: textCapitalization,
           onChanged: onChanged,
           onTap: onTap,
           readOnly: readOnly,
@@ -78,7 +81,7 @@ class CustomTextField extends StatelessWidget {
             fillColor: enabled ? AppColors.surface : AppColors.background,
             contentPadding: EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
+              vertical: maxLines > 1 ? AppSpacing.sm : AppSpacing.md,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),

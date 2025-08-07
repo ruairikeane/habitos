@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 
 class HabitCategory {
+  final String id;
   final String name;
   final Color color;
   final IconData icon;
 
   const HabitCategory({
+    required this.id,
     required this.name,
     required this.color,
     required this.icon,
@@ -14,6 +16,7 @@ class HabitCategory {
 
   factory HabitCategory.fromJson(Map<String, dynamic> json) {
     return HabitCategory(
+      id: json['id'] as String,
       name: json['name'] as String,
       color: Color(json['color'] as int),
       icon: _getIconFromString(json['icon'] as String),
@@ -22,6 +25,7 @@ class HabitCategory {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'color': color.value,
       'icon': _getIconString(icon),
@@ -67,41 +71,49 @@ class HabitCategory {
 // Default categories matching the React Native app
 const List<HabitCategory> defaultCategories = [
   HabitCategory(
+    id: 'health',
     name: 'Health & Wellness',
     color: Color(0xFF9CAF88), // Soft sage
     icon: Icons.favorite_outline,
   ),
   HabitCategory(
+    id: 'fitness',
     name: 'Fitness',
     color: Color(0xFFA67C7C), // Dusty rose
     icon: Icons.fitness_center,
   ),
   HabitCategory(
+    id: 'productivity',
     name: 'Productivity',
     color: Color(0xFFD4B85A), // Earth yellow
     icon: Icons.check_circle_outline,
   ),
   HabitCategory(
+    id: 'learning',
     name: 'Learning',
     color: Color(0xFF8FA4B2), // Dusty blue
     icon: Icons.menu_book_outlined,
   ),
   HabitCategory(
+    id: 'mindfulness',
     name: 'Mindfulness',
     color: Color(0xFF9B8BA4), // Soft lavender-gray
     icon: Icons.eco_outlined,
   ),
   HabitCategory(
+    id: 'personal-care',
     name: 'Personal Care',
     color: Color(0xFFC4A484), // Dusty peach
     icon: Icons.person_outline,
   ),
   HabitCategory(
+    id: 'social',
     name: 'Social',
     color: Color(0xFFB8956A), // Warm sand
     icon: Icons.people_outline,
   ),
   HabitCategory(
+    id: 'creativity',
     name: 'Creative',
     color: Color(0xFFA49B8B), // Mushroom
     icon: Icons.palette_outlined,

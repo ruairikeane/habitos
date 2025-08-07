@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/config/firebase_config.dart';
 import 'app.dart';
 
 void main() async {
@@ -11,10 +13,10 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   
-  // TODO: Initialize Firebase
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   
   runApp(const HabitosApp());
 }
@@ -22,3 +24,4 @@ void main() async {
 
 // Weekly milestones added
 // All improvements applied
+// Hot reload triggered

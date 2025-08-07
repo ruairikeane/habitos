@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
+import '../../providers/scroll_provider.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -58,6 +60,7 @@ class MainScaffold extends StatelessWidget {
                 label: 'Home',
                 isSelected: selectedIndex == 0,
                 onTap: () => context.go('/home'),
+                routeName: 'home',
               ),
               _buildNavItem(
                 context,
@@ -66,6 +69,7 @@ class MainScaffold extends StatelessWidget {
                 label: 'Habits',
                 isSelected: selectedIndex == 1,
                 onTap: () => context.go('/habits'),
+                routeName: 'habits',
               ),
               _buildNavItem(
                 context,
@@ -74,6 +78,7 @@ class MainScaffold extends StatelessWidget {
                 label: 'Stats',
                 isSelected: selectedIndex == 2,
                 onTap: () => context.go('/statistics'),
+                routeName: 'statistics',
               ),
               _buildNavItem(
                 context,
@@ -82,6 +87,7 @@ class MainScaffold extends StatelessWidget {
                 label: 'Tips',
                 isSelected: selectedIndex == 3,
                 onTap: () => context.go('/tips'),
+                routeName: 'tips',
               ),
               _buildNavItem(
                 context,
@@ -90,6 +96,7 @@ class MainScaffold extends StatelessWidget {
                 label: 'Settings',
                 isSelected: selectedIndex == 4,
                 onTap: () => context.go('/settings'),
+                routeName: 'settings',
               ),
             ],
           ),
@@ -105,9 +112,19 @@ class MainScaffold extends StatelessWidget {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    String? routeName,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        // If already on the current tab, scroll to top
+        if (isSelected && routeName != null) {
+          final scrollProvider = Provider.of<ScrollProvider>(context, listen: false);
+          scrollProvider.scrollToTop(routeName);
+        } else {
+          // Otherwise navigate to the route
+          onTap();
+        }
+      },
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.xs,

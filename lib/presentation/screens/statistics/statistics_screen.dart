@@ -4,6 +4,7 @@ import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
 import '../../../core/constants/categories.dart';
 import '../../providers/habits_provider.dart';
+import '../../providers/scroll_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -52,33 +53,39 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.screenPadding),
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Month Navigation
-              _buildMonthNavigation(),
-              
-              SizedBox(height: AppSpacing.sectionSpacing),
-              
-              // Overview Cards
-              _buildOverviewSection(),
-              
-              SizedBox(height: AppSpacing.sectionSpacing),
-              
-              // 6-Month Progress Bar Graph
-              _buildSixMonthProgress(),
-              
-              SizedBox(height: AppSpacing.sectionSpacing),
-              
-              // Individual Habit Progress
-              _buildHabitProgressSection(),
-              
-              SizedBox(height: AppSpacing.xl),
-            ],
-          ),
+        child: Consumer<ScrollProvider>(
+          builder: (context, scrollProvider, child) {
+            final scrollController = scrollProvider.getScrollController('statistics');
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: EdgeInsets.all(AppSpacing.screenPadding),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Month Navigation
+                  _buildMonthNavigation(),
+                  
+                  SizedBox(height: AppSpacing.sectionSpacing),
+                  
+                  // Overview Cards
+                  _buildOverviewSection(),
+                  
+                  SizedBox(height: AppSpacing.sectionSpacing),
+                  
+                  // 6-Month Progress Bar Graph
+                  _buildSixMonthProgress(),
+                  
+                  SizedBox(height: AppSpacing.sectionSpacing),
+                  
+                  // Individual Habit Progress
+                  _buildHabitProgressSection(),
+                  
+                  SizedBox(height: AppSpacing.xl),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -383,7 +390,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final sixMonthData = _getSixMonthData();
     return sixMonthData.map((data) {
       final height = (data['percentage'] as double) * 0.6 + 10; // Much smaller bars: max 70px
-      return Container(
+      return SizedBox(
         width: 35,
         height: 70, // Fixed container height
         child: Column(
@@ -533,27 +540,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Color _getCategoryColor(String categoryId) {
-    // Map category IDs to colors - using existing app colors
-    switch (categoryId.toLowerCase()) {
-      case 'health':
-        return AppColors.health;
-      case 'productivity':
-        return AppColors.productivity;
-      case 'mindfulness':
-        return AppColors.mindfulness;
-      case 'exercise':
-        return AppColors.exercise;
-      case 'learning':
-        return AppColors.learning;
-      case 'social':
-        return AppColors.social;
-      case 'creativity':
-        return AppColors.creativity;
-      case 'self-care':
-        return AppColors.selfCare;
-      default:
-        return AppColors.primary;
-    }
+    return AppColors.getCategoryColor(categoryId);
   }
 
   double _calculateHabitMonthlyProgress(String habitId) {

@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class HabitEntry {
   final String id;
   final String habitId;
   final String userId;
-  final String entryDate; // YYYY-MM-DD format
+  final DateTime date;
+  final String dateString; // YYYY-MM-DD format
   final bool isCompleted;
   final String? notes;
   final DateTime? completedAt;
@@ -12,7 +15,8 @@ class HabitEntry {
     required this.id,
     required this.habitId,
     required this.userId,
-    required this.entryDate,
+    required this.date,
+    required this.dateString,
     required this.isCompleted,
     this.notes,
     this.completedAt,
@@ -20,11 +24,13 @@ class HabitEntry {
   });
 
   factory HabitEntry.fromJson(Map<String, dynamic> json) {
+    final entryDate = json['entry_date'] as String;
     return HabitEntry(
       id: json['id'] as String,
       habitId: json['habit_id'] as String,
       userId: json['user_id'] as String,
-      entryDate: json['entry_date'] as String,
+      date: DateTime.parse(entryDate),
+      dateString: entryDate,
       isCompleted: json['is_completed'] as bool,
       notes: json['notes'] as String?,
       completedAt: json['completed_at'] != null
@@ -34,12 +40,42 @@ class HabitEntry {
     );
   }
 
+  // Firestore serialization methods
+  factory HabitEntry.fromFirestore(Map<String, dynamic> data) {
+    return HabitEntry(
+      id: data['id'] as String,
+      habitId: data['habitId'] as String,
+      userId: data['userId'] as String,
+      date: (data['date'] as Timestamp).toDate(),
+      dateString: data['dateString'] as String,
+      isCompleted: data['isCompleted'] as bool,
+      notes: data['notes'] as String?,
+      completedAt: data['completedAt'] != null
+          ? (data['completedAt'] as Timestamp).toDate()
+          : null,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'habitId': habitId,
+      'userId': userId,
+      'date': Timestamp.fromDate(date),
+      'dateString': dateString,
+      'isCompleted': isCompleted,
+      if (notes != null) 'notes': notes,
+      if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'habit_id': habitId,
       'user_id': userId,
-      'entry_date': entryDate,
+      'entry_date': dateString,
       'is_completed': isCompleted,
       if (notes != null) 'notes': notes,
       if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
@@ -51,7 +87,8 @@ class HabitEntry {
     String? id,
     String? habitId,
     String? userId,
-    String? entryDate,
+    DateTime? date,
+    String? dateString,
     bool? isCompleted,
     String? notes,
     DateTime? completedAt,
@@ -61,7 +98,8 @@ class HabitEntry {
       id: id ?? this.id,
       habitId: habitId ?? this.habitId,
       userId: userId ?? this.userId,
-      entryDate: entryDate ?? this.entryDate,
+      date: date ?? this.date,
+      dateString: dateString ?? this.dateString,
       isCompleted: isCompleted ?? this.isCompleted,
       notes: notes ?? this.notes,
       completedAt: completedAt ?? this.completedAt,
@@ -76,7 +114,7 @@ class HabitEntry {
         other.id == id &&
         other.habitId == habitId &&
         other.userId == userId &&
-        other.entryDate == entryDate &&
+        other.dateString == dateString &&
         other.isCompleted == isCompleted &&
         other.notes == notes &&
         other.completedAt == completedAt &&
@@ -89,7 +127,7 @@ class HabitEntry {
       id,
       habitId,
       userId,
-      entryDate,
+      dateString,
       isCompleted,
       notes,
       completedAt,
@@ -99,6 +137,6 @@ class HabitEntry {
 
   @override
   String toString() {
-    return 'HabitEntry(id: $id, habitId: $habitId, entryDate: $entryDate, isCompleted: $isCompleted)';
+    return 'HabitEntry(id: $id, habitId: $habitId, dateString: $dateString, isCompleted: $isCompleted)';
   }
 }

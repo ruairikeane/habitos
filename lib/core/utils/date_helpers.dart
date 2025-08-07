@@ -12,6 +12,11 @@ class DateHelpers {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
+  // Format date for storage (same as getLocalDateString, kept for compatibility)
+  static String formatDateForStorage(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
+
   // Parse date string to DateTime
   static DateTime parseLocalDate(String dateString) {
     return DateFormat('yyyy-MM-dd').parse(dateString);
