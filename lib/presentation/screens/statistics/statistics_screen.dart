@@ -78,8 +78,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   
                   SizedBox(height: AppSpacing.sectionSpacing),
                   
-                  // Individual Habit Progress
-                  _buildHabitProgressSection(),
+                  // Category Progress
+                  _buildCategoryProgressSection(),
+                  
+                  SizedBox(height: AppSpacing.sectionSpacing),
+                  
+                  // Personal Records
+                  _buildPersonalRecordsSection(),
                   
                   SizedBox(height: AppSpacing.xl),
                 ],
@@ -247,87 +252,450 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildHabitProgressSection() {
+  Widget _buildCategoryProgressSection() {
     return Consumer<HabitsProvider>(
       builder: (context, habitsProvider, child) {
         final habits = habitsProvider.habits;
-        
-        if (habits.isEmpty) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Habit Progress',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              
-              SizedBox(height: AppSpacing.md),
-              
-              Container(
-                padding: EdgeInsets.all(AppSpacing.cardPadding * 1.5),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      offset: const Offset(0, 2),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.analytics_outlined,
-                        size: 48,
-                        color: AppColors.textMuted,
-                      ),
-                      SizedBox(height: AppSpacing.md),
-                      Text(
-                        'No habits yet',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Create habits to see your progress',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
+        final categoryProgress = _calculateCategoryProgress(habits, habitsProvider);
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Habit Progress',
+              'Category Progress',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.bold,
               ),
             ),
             
             SizedBox(height: AppSpacing.md),
             
-            ...habits.map((habit) => _buildHabitProgressCard(habit, habitsProvider)),
+            Container(
+              padding: EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    offset: const Offset(0, 2),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: categoryProgress.isEmpty
+                    ? [
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(AppSpacing.xl),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.category_outlined,
+                                  size: 48,
+                                  color: AppColors.textMuted,
+                                ),
+                                SizedBox(height: AppSpacing.md),
+                                Text(
+                                  'No habits to analyze',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'Create some habits to see category progress',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ]
+                    : categoryProgress.entries.map((entry) {
+                        return _buildCategoryProgressBar(entry.key, entry.value);
+                      }).toList(),
+              ),
+            ),
           ],
         );
       },
     );
+  }
+
+  Widget _buildCategoryProgressBar(String categoryId, Map<String, dynamic> data) {
+    final categoryColor = AppColors.getCategoryColor(categoryId);
+    final progress = data['progress'] as double;
+    final habitCount = data['habitCount'] as int;
+    final categoryName = _getCategoryName(categoryId);
+    
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: categoryColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: categoryColor.withValues(alpha: 0.4),
+                          offset: const Offset(0, 1),
+                          blurRadius: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    categoryName,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.xs),
+                  Text(
+                    '($habitCount ${habitCount == 1 ? 'habit' : 'habits'})',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: categoryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: AppSpacing.sm),
+          
+          Container(
+            height: 12,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: FractionallySizedBox(
+              widthFactor: progress,
+              alignment: Alignment.centerLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      categoryColor,
+                      categoryColor.withValues(alpha: 0.8),
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: categoryColor.withValues(alpha: 0.4),
+                      offset: const Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalRecordsSection() {
+    return Consumer<HabitsProvider>(
+      builder: (context, habitsProvider, child) {
+        final records = _calculatePersonalRecords(habitsProvider);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Personal Records',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            
+            SizedBox(height: AppSpacing.md),
+            
+            Container(
+              padding: EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.1),
+                    AppColors.success.withValues(alpha: 0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    offset: const Offset(0, 4),
+                    blurRadius: 16,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildRecordCard(
+                          title: 'Longest Streak',
+                          value: '${records['longestStreak']} days',
+                          icon: Icons.local_fire_department,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _buildRecordCard(
+                          title: 'This Month',
+                          value: '${records['thisMonthProgress']}%',
+                          icon: Icons.trending_up,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  SizedBox(height: AppSpacing.md),
+                  
+                  _buildRecordCard(
+                    title: 'Best Month Ever',
+                    value: '${records['bestMonthProgress']}% (${records['bestMonthName']})',
+                    icon: Icons.emoji_events,
+                    color: AppColors.success,
+                    isWide: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRecordCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    bool isWide = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            offset: const Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: isWide ? MainAxisAlignment.start : MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              if (isWide) ...[
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.xs),
+                      Text(
+                        value,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          
+          if (!isWide) ...[
+            SizedBox(height: AppSpacing.sm),
+            
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            SizedBox(height: AppSpacing.xs),
+            
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Map<String, Map<String, dynamic>> _calculateCategoryProgress(List habits, HabitsProvider habitsProvider) {
+    final Map<String, Map<String, dynamic>> categoryData = {};
+    
+    for (final habit in habits) {
+      final categoryId = habit.categoryId ?? 'general';
+      if (!categoryData.containsKey(categoryId)) {
+        categoryData[categoryId] = {
+          'habitCount': 0,
+          'completedDays': 0,
+          'totalPossibleDays': 0,
+        };
+      }
+      
+      categoryData[categoryId]!['habitCount']++;
+      
+      // Calculate progress for current month
+      final now = DateTime.now();
+      final daysPassed = now.day;
+      
+      int habitCompletedDays = 0;
+      for (int day = 1; day <= daysPassed; day++) {
+        final date = DateTime(now.year, now.month, day);
+        final dateString = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        if (habitsProvider.isHabitCompletedOnDate(habit.id, dateString)) {
+          habitCompletedDays++;
+        }
+      }
+      
+      categoryData[categoryId]!['completedDays'] += habitCompletedDays;
+      categoryData[categoryId]!['totalPossibleDays'] += daysPassed;
+    }
+    
+    // Calculate progress percentages
+    final Map<String, Map<String, dynamic>> result = {};
+    categoryData.forEach((categoryId, data) {
+      final totalPossible = data['totalPossibleDays'] as int;
+      final completed = data['completedDays'] as int;
+      final progress = totalPossible > 0 ? completed / totalPossible : 0.0;
+      
+      result[categoryId] = {
+        'habitCount': data['habitCount'],
+        'progress': progress,
+        'completedDays': completed,
+        'totalPossibleDays': totalPossible,
+      };
+    });
+    
+    return result;
+  }
+
+  Map<String, dynamic> _calculatePersonalRecords(HabitsProvider habitsProvider) {
+    // Mock data for now - in a real implementation, this would calculate from historical data
+    final currentMonthProgress = _calculateCurrentMonthProgress(habitsProvider);
+    
+    return {
+      'longestStreak': 23, // Mock longest streak
+      'thisMonthProgress': (currentMonthProgress * 100).toInt(),
+      'bestMonthProgress': 87, // Mock best month
+      'bestMonthName': 'October 2024', // Mock best month name
+    };
+  }
+
+  double _calculateCurrentMonthProgress(HabitsProvider habitsProvider) {
+    final habits = habitsProvider.habits;
+    if (habits.isEmpty) return 0.0;
+    
+    final now = DateTime.now();
+    final daysPassed = now.day;
+    int totalCompletedDays = 0;
+    int totalPossibleDays = 0;
+    
+    for (final habit in habits) {
+      for (int day = 1; day <= daysPassed; day++) {
+        final date = DateTime(now.year, now.month, day);
+        final dateString = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        if (habitsProvider.isHabitCompletedOnDate(habit.id, dateString)) {
+          totalCompletedDays++;
+        }
+        totalPossibleDays++;
+      }
+    }
+    
+    return totalPossibleDays > 0 ? totalCompletedDays / totalPossibleDays : 0.0;
+  }
+
+  String _getCategoryName(String categoryId) {
+    final category = defaultCategories.firstWhere(
+      (cat) => cat.id == categoryId,
+      orElse: () => defaultCategories.first,
+    );
+    return category.name;
   }
 
   Widget _buildStatCard({
@@ -455,113 +823,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
     
     return data;
-  }
-
-  Widget _buildHabitProgressCard(dynamic habit, HabitsProvider provider) {
-    final monthlyProgress = _calculateHabitMonthlyProgress(habit.id);
-    final categoryColor = _getCategoryColor(habit.categoryId ?? 'general');
-    
-    return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.md),
-      padding: EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            offset: const Offset(0, 1),
-            blurRadius: 4,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                habit.icon ?? Icons.check_circle_outline,
-                color: categoryColor,
-                size: AppSpacing.iconSm,
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  habit.name ?? 'Unnamed Habit',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Text(
-                '${monthlyProgress.toInt()}%',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: categoryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: AppSpacing.sm),
-          
-          // Progress Bar
-          Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: monthlyProgress / 100,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: categoryColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-          ),
-          
-          SizedBox(height: AppSpacing.xs),
-          
-          Text(
-            '${_getDaysCompletedThisMonth(habit.id)} of ${_getDaysInSelectedMonth()} days completed',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getCategoryColor(String categoryId) {
-    return AppColors.getCategoryColor(categoryId);
-  }
-
-  double _calculateHabitMonthlyProgress(String habitId) {
-    // Calculate progress based on selected month and habit
-    final monthDiff = DateTime.now().month - _selectedMonth.month;
-    final baseProgress = 40 + (habitId.hashCode % 50);
-    final monthVariation = (monthDiff * 10 + habitId.hashCode % 30);
-    return (baseProgress + monthVariation).toDouble().clamp(0, 100);
-  }
-
-  int _getDaysCompletedThisMonth(String habitId) {
-    // Calculate days completed based on progress and selected month
-    final progress = _calculateHabitMonthlyProgress(habitId);
-    final totalDays = _getDaysInSelectedMonth();
-    return ((progress / 100) * totalDays).round();
-  }
-
-  int _getDaysInSelectedMonth() {
-    final nextMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 1);
-    final lastDayOfMonth = nextMonth.subtract(const Duration(days: 1));
-    return lastDayOfMonth.day;
   }
 
   int _calculateMonthlyCompletion() {

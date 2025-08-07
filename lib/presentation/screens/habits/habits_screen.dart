@@ -49,17 +49,6 @@ class _HabitsScreenState extends State<HabitsScreen> {
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: AppColors.primary,
-            ),
-            onPressed: () {
-              context.push('/habits/add');
-            },
-          ),
-        ],
       ),
       body: Consumer<HabitsProvider>(
         builder: (context, habitsProvider, child) {
@@ -141,6 +130,15 @@ class _HabitsScreenState extends State<HabitsScreen> {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push('/habits/add');
+        },
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textLight,
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -148,6 +146,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
     return Consumer<HabitsProvider>(
       builder: (context, habitsProvider, child) {
         final isCompleted = habitsProvider.isHabitCompletedToday(habit.id);
+        final monthlyProgress = _calculateMonthlyProgress(habitsProvider, habit.id);
 
         return GestureDetector(
           onTap: () {
@@ -162,74 +161,166 @@ class _HabitsScreenState extends State<HabitsScreen> {
               boxShadow: [
                 BoxShadow(
                   color: AppColors.shadow,
-                  offset: const Offset(0, 1),
-                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                  blurRadius: 8,
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
               children: [
-              GestureDetector(
-                onTap: () => habitsProvider.toggleHabitCompletion(habit.id),
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.surface,
-                    border: Border.all(
-                      color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.textMuted,
-                      width: 2,
+                // Main habit info row
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => habitsProvider.toggleHabitCompletion(habit.id),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.surface,
+                          border: Border.all(
+                            color: isCompleted ? AppColors.getCategoryColor(habit.categoryId ?? 'general') : AppColors.textMuted,
+                            width: 2,
+                          ),
+                        ),
+                        child: isCompleted
+                            ? Icon(
+                                Icons.check,
+                                size: 18,
+                                color: AppColors.textLight,
+                              )
+                            : null,
+                      ),
                     ),
-                  ),
-                  child: isCompleted
-                      ? Icon(
-                          Icons.check,
-                          size: 18,
-                          color: AppColors.textLight,
-                        )
-                      : null,
+                    
+                    SizedBox(width: AppSpacing.md),
+                    
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  habit.name,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
+                                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '${(monthlyProgress * 100).toInt()}%',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: AppColors.getCategoryColor(habit.categoryId ?? 'general'),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (habit.description?.isNotEmpty == true) ...[
+                            SizedBox(height: AppSpacing.xs),
+                            Text(
+                              habit.description!,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    
+                    SizedBox(width: AppSpacing.sm),
+                    
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.xs),
+                      decoration: BoxDecoration(
+                        color: AppColors.getCategoryColor(habit.categoryId ?? 'general').withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
+                      ),
+                      child: Icon(
+                        habit.icon,
+                        color: AppColors.getCategoryColor(habit.categoryId ?? 'general'),
+                        size: 20,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              
-              SizedBox(width: AppSpacing.md),
-              
-              Expanded(
-                child: Column(
+                
+                SizedBox(height: AppSpacing.sm),
+                
+                // Monthly progress bar
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      habit.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                      'This Month',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (habit.description?.isNotEmpty == true) ...[
-                      SizedBox(height: AppSpacing.xs),
-                      Text(
-                        habit.description!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    SizedBox(height: AppSpacing.xs),
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                    ],
+                      child: FractionallySizedBox(
+                        widthFactor: monthlyProgress,
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.getCategoryColor(habit.categoryId ?? 'general'),
+                                AppColors.getCategoryColor(habit.categoryId ?? 'general').withValues(alpha: 0.7),
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.getCategoryColor(habit.categoryId ?? 'general').withValues(alpha: 0.3),
+                                offset: const Offset(0, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              
-              Icon(
-                habit.icon,
-                color: AppColors.getCategoryColor(habit.categoryId ?? 'general'),
-                size: AppSpacing.iconMd,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
+        );
       },
     );
+  }
+
+  double _calculateMonthlyProgress(HabitsProvider habitsProvider, String habitId) {
+    final now = DateTime.now();
+    final daysPassed = now.day;
+    
+    int completedDays = 0;
+    for (int day = 1; day <= daysPassed; day++) {
+      final date = DateTime(now.year, now.month, day);
+      final dateString = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      if (habitsProvider.isHabitCompletedOnDate(habitId, dateString)) {
+        completedDays++;
+      }
+    }
+    
+    return daysPassed > 0 ? completedDays / daysPassed : 0.0;
   }
 }
