@@ -37,108 +37,109 @@ class _HabitsScreenState extends State<HabitsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'My Habits',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-      ),
-      body: Consumer<HabitsProvider>(
-        builder: (context, habitsProvider, child) {
-          if (habitsProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    return Consumer<HabitsProvider>(
+      builder: (context, habitsProvider, child) {
+        if (habitsProvider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
 
-          final habits = habitsProvider.habits;
+        final habits = habitsProvider.habits;
 
-          if (habits.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height - 200,
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.screenPadding),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 64,
+        if (habits.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _loadData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height - 200,
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacing.screenPadding),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 64,
+                          color: AppColors.textMuted,
+                        ),
+                        SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'No Habits Yet',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Create your first habit to start building better routines!',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: AppColors.textMuted,
                           ),
-                          SizedBox(height: AppSpacing.lg),
-                          Text(
-                            'No Habits Yet',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'Create your first habit to start building better routines!',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: AppSpacing.xl),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              context.push('/habits/add');
-                            },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Create First Habit'),
-                          ),
-                        ],
-                      ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: AppSpacing.xl),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            context.push('/habits/add');
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('Create First Habit'),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _loadData,
-            child: Consumer<ScrollProvider>(
-              builder: (context, scrollProvider, child) {
-                final scrollController = scrollProvider.getScrollController('habits');
-                return ListView.builder(
-                  controller: scrollController,
-                  padding: EdgeInsets.all(AppSpacing.screenPadding),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: habits.length,
-                  itemBuilder: (context, index) {
-                    final habit = habits[index];
-                    return _buildHabitCard(habit);
-                  },
-                );
-              },
             ),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/habits/add');
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textLight,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        }
+
+        return RefreshIndicator(
+          onRefresh: _loadData,
+          child: Consumer<ScrollProvider>(
+            builder: (context, scrollProvider, child) {
+              final scrollController = scrollProvider.getScrollController('habits');
+              return ListView.builder(
+                controller: scrollController,
+                padding: EdgeInsets.all(AppSpacing.screenPadding),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: habits.length + 1, // Add 1 for the button
+                itemBuilder: (context, index) {
+                  if (index == habits.length) {
+                    // Add new habit button at the end
+                    return Container(
+                      margin: EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xl),
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          context.push('/habits/add');
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add new habit'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.textLight,
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                            horizontal: AppSpacing.xl,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  final habit = habits[index];
+                  return _buildHabitCard(habit);
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -200,26 +201,13 @@ class _HabitsScreenState extends State<HabitsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  habit.name,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
-                                    decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '${(monthlyProgress * 100).toInt()}%',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: AppColors.getCategoryColor(habit.categoryId ?? 'general'),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            habit.name,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
+                              decoration: isCompleted ? TextDecoration.lineThrough : null,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           if (habit.description?.isNotEmpty == true) ...[
                             SizedBox(height: AppSpacing.xs),
@@ -241,7 +229,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                     Container(
                       padding: EdgeInsets.all(AppSpacing.xs),
                       decoration: BoxDecoration(
-                        color: AppColors.getCategoryColor(habit.categoryId ?? 'general').withValues(alpha: 0.2),
+                        color: AppColors.getCategoryColor(habit.categoryId ?? 'general').withOpacity(0.2),
                         borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
                       ),
                       child: Icon(
@@ -259,41 +247,56 @@ class _HabitsScreenState extends State<HabitsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'This Month',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'This Month',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${(monthlyProgress * 100).toInt()}%',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: AppSpacing.xs),
                     Container(
                       height: 8,
+                      width: double.infinity,
                       decoration: BoxDecoration(
                         color: AppColors.divider,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: FractionallySizedBox(
-                        widthFactor: monthlyProgress,
+                      child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.getCategoryColor(habit.categoryId ?? 'general'),
-                                AppColors.getCategoryColor(habit.categoryId ?? 'general').withValues(alpha: 0.7),
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.getCategoryColor(habit.categoryId ?? 'general').withValues(alpha: 0.3),
-                                offset: const Offset(0, 1),
-                                blurRadius: 2,
+                        child: FractionallySizedBox(
+                          widthFactor: monthlyProgress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.getCategoryColor(habit.categoryId ?? 'general'),
+                                  AppColors.getCategoryColor(habit.categoryId ?? 'general').withOpacity(0.7),
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
                               ),
-                            ],
+                              borderRadius: BorderRadius.circular(4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.getCategoryColor(habit.categoryId ?? 'general').withOpacity(0.3),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

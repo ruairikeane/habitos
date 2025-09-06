@@ -89,6 +89,29 @@ class HabitsProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshEntries() async {
+    if (!_firebaseService.isAuthenticated) return;
+    
+    try {
+      // Load recent habit entries (last 30 days)
+      final startDate = DateTime.now().subtract(const Duration(days: 30));
+      final allEntries = <HabitEntry>[];
+      
+      for (final habit in _habits) {
+        final entries = await _firebaseService.getHabitEntries(
+          habit.id, 
+          startDate: startDate
+        );
+        allEntries.addAll(entries);
+      }
+      
+      _entries = allEntries;
+      notifyListeners();
+    } catch (e) {
+      print('Error refreshing entries: $e');
+    }
+  }
+
   Future<void> loadHabits() async {
     print('🔄 PROVIDER: Starting loadHabits()...');
     try {
@@ -98,19 +121,23 @@ class HabitsProvider with ChangeNotifier {
         // Load habits from Firebase (force fresh data)
         _habits = await _firebaseService.getUserHabits();
         
-        // Load recent habit entries (last 30 days)
-        final startDate = DateTime.now().subtract(const Duration(days: 30));
-        final allEntries = <HabitEntry>[];
-        
-        for (final habit in _habits) {
-          final entries = await _firebaseService.getHabitEntries(
-            habit.id, 
-            startDate: startDate
-          );
-          allEntries.addAll(entries);
+        // Only reload entries if we don't have any cached entries
+        // This prevents overwriting recent completions when navigating between pages
+        if (_entries.isEmpty) {
+          // Load recent habit entries (last 30 days)
+          final startDate = DateTime.now().subtract(const Duration(days: 30));
+          final allEntries = <HabitEntry>[];
+          
+          for (final habit in _habits) {
+            final entries = await _firebaseService.getHabitEntries(
+              habit.id, 
+              startDate: startDate
+            );
+            allEntries.addAll(entries);
+          }
+          
+          _entries = allEntries;
         }
-        
-        _entries = allEntries;
         
         print('✅ Successfully loaded ${_habits.length} habits');
         for (final habit in _habits) {
@@ -177,6 +204,52 @@ class HabitsProvider with ChangeNotifier {
           userId: _firebaseService.currentUser!.uid,
           date: dateTime,
           dateString: today,
+          isCompleted: true,
+          completedAt: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
+        _entries.add(newEntry);
+        
+        // Save to Firebase
+        await _firebaseService.addOrUpdateHabitEntry(newEntry);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      _setError('Failed to update habit: ${e.toString()}');
+    }
+  }
+
+  Future<void> toggleHabitCompletionForDate(String habitId, DateTime date) async {
+    try {
+      if (!_firebaseService.isAuthenticated) {
+        _setError('Please sign in to track habits');
+        return;
+      }
+
+      final dateString = DateHelpers.formatDateForStorage(date);
+      final existingEntryIndex = _entries.indexWhere((entry) => 
+          entry.habitId == habitId && entry.dateString == dateString);
+
+      if (existingEntryIndex != -1) {
+        // Update existing entry
+        final entry = _entries[existingEntryIndex];
+        final updatedEntry = entry.copyWith(
+          isCompleted: !entry.isCompleted,
+          completedAt: !entry.isCompleted ? DateTime.now() : null,
+        );
+        _entries[existingEntryIndex] = updatedEntry;
+        
+        // Update in Firebase
+        await _firebaseService.addOrUpdateHabitEntry(updatedEntry);
+      } else {
+        // Create new entry
+        final newEntry = HabitEntry(
+          id: 'entry_${DateTime.now().millisecondsSinceEpoch}',
+          habitId: habitId,
+          userId: _firebaseService.currentUser!.uid,
+          date: date,
+          dateString: dateString,
           isCompleted: true,
           completedAt: DateTime.now(),
           createdAt: DateTime.now(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
 import '../../../core/constants/tips.dart';
@@ -34,6 +35,13 @@ class _TipsScreenState extends State<TipsScreen> {
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () {
+            // Go back to home page when back button is pressed
+            context.go('/home');
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -95,7 +103,7 @@ class _TipsScreenState extends State<TipsScreen> {
           });
         },
         backgroundColor: AppColors.surface,
-        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+        selectedColor: AppColors.primary.withOpacity(0.2),
         labelStyle: TextStyle(
           color: isSelected ? AppColors.primary : AppColors.textSecondary,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,

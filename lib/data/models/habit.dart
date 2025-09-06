@@ -251,6 +251,22 @@ class Habit {
         return Icons.people_outline;
       case 'palette':
         return Icons.palette_outlined;
+      case 'drink':
+        return Icons.local_drink;
+      case 'run':
+        return Icons.directions_run;
+      case 'sleep':
+        return Icons.bedtime;
+      case 'food':
+        return Icons.restaurant;
+      case 'phone':
+        return Icons.phone_android;
+      case 'work':
+        return Icons.work;
+      case 'school':
+        return Icons.school;
+      case 'brush':
+        return Icons.brush;
       default:
         return Icons.circle_outlined;
     }
@@ -266,6 +282,14 @@ class Habit {
     if (icon == Icons.person_outline) return 'person';
     if (icon == Icons.people_outline) return 'people';
     if (icon == Icons.palette_outlined) return 'palette';
+    if (icon == Icons.local_drink) return 'drink';
+    if (icon == Icons.directions_run) return 'run';
+    if (icon == Icons.bedtime) return 'sleep';
+    if (icon == Icons.restaurant) return 'food';
+    if (icon == Icons.phone_android) return 'phone';
+    if (icon == Icons.work) return 'work';
+    if (icon == Icons.school) return 'school';
+    if (icon == Icons.brush) return 'brush';
     return 'circle';
   }
 }

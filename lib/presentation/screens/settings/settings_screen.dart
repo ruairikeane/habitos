@@ -82,48 +82,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Manage reminder settings',
               onTap: () => context.push('/settings/notifications'),
             ),
-            Consumer<SettingsProvider>(
-              builder: (context, settingsProvider, child) {
-                return FutureBuilder<String>(
-                  future: settingsProvider.biometricDisplayName,
-                  builder: (context, snapshot) {
-                    final displayName = snapshot.data ?? 'Biometric Authentication';
-                    
-                    return _buildSettingsTile(
-                      icon: Icons.fingerprint,
-                      title: displayName,
-                      subtitle: 'Use $displayName for quick sign-in',
-                      trailing: FutureBuilder<bool>(
-                        future: settingsProvider.isBiometricAvailable,
-                        builder: (context, availableSnapshot) {
-                          final isAvailable = availableSnapshot.data ?? false;
-                          
-                          return Switch(
-                            value: isAvailable ? settingsProvider.biometricEnabled : false,
-                            onChanged: isAvailable ? (value) async {
-                              final success = await settingsProvider.updateBiometricEnabled(value);
-                              if (!success && mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      value 
-                                        ? 'Failed to enable $displayName. Please try again.' 
-                                        : 'Failed to disable $displayName.',
-                                    ),
-                                    backgroundColor: AppColors.error,
-                                  ),
-                                );
-                              }
-                            } : null,
-                            activeColor: AppColors.primary,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
             _buildSettingsTile(
               icon: Icons.palette_outlined,
               title: 'Theme',
@@ -266,17 +224,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             icon: Icon(
               Icons.logout,
-              color: AppColors.darkEarthyOrange,
+              color: AppColors.destructive,
             ),
             label: Text(
               authProvider.isLoading ? 'Signing Out...' : 'Sign Out',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.darkEarthyOrange,
+                color: AppColors.destructive,
                 fontWeight: FontWeight.w600,
               ),
             ),
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.darkEarthyOrange),
+              side: BorderSide(color: AppColors.destructive),
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -307,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 'Sign Out',
-                style: TextStyle(color: AppColors.darkEarthyOrange),
+                style: TextStyle(color: AppColors.destructive),
               ),
             ),
           ],

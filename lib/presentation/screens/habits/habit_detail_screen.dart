@@ -80,36 +80,13 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
             backgroundColor: AppColors.background,
             elevation: 0,
             actions: [
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showEditHabitDialog(context, habit);
-                  } else if (value == 'delete') {
-                    _showDeleteConfirmation(context, habit);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Edit Habit'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete Habit', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _showEditHabitDialog(context, habit),
+                icon: Icon(
+                  Icons.edit,
+                  color: AppColors.primary,
+                ),
+                tooltip: 'Edit Habit',
               ),
             ],
           ),
@@ -132,6 +109,13 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                       
                       // Stats Section
                       _buildStatsSection(habitsProvider, habit),
+                      
+                      SizedBox(height: AppSpacing.xl),
+                      
+                      // Delete Button
+                      _buildDeleteButton(context, habit),
+                      
+                      SizedBox(height: AppSpacing.lg),
                     ],
                   ),
                 ),
@@ -162,7 +146,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               Container(
                 padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.getCategoryColor(habit.categoryId).withValues(alpha: 0.2),
+                  color: AppColors.getCategoryColor(habit.categoryId).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 ),
                 child: Icon(
@@ -242,8 +226,8 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Month navigation header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Completion History',
@@ -252,7 +236,9 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              SizedBox(height: AppSpacing.sm),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
                     icon: Icon(Icons.chevron_left, color: AppColors.primary),
@@ -262,11 +248,14 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                       });
                     },
                   ),
-                  Text(
-                    '${_getMonthName(_focusedMonth.month)} ${_focusedMonth.year}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      '${_getMonthName(_focusedMonth.month)} ${_focusedMonth.year}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                   IconButton(
@@ -341,9 +330,9 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildLegendItem('Completed', AppColors.success),
-              _buildLegendItem('Incomplete', AppColors.border),
-              _buildLegendItem('Today', AppColors.primary),
+              _buildLegendItem('Completed', AppColors.success, filled: true),
+              _buildLegendItem('Incomplete', AppColors.border, filled: false),
+              _buildLegendItem('Today', AppColors.primary, filled: false, isToday: true),
             ],
           ),
         ],
@@ -358,19 +347,30 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
     
     Color bgColor;
     Color textColor;
+    Color borderColor;
+    double borderWidth;
     
     if (isCompleted) {
       bgColor = AppColors.success;
       textColor = AppColors.textLight;
-    } else if (isToday) {
-      bgColor = AppColors.primary;
-      textColor = AppColors.textLight;
-    } else if (isSelected) {
-      bgColor = AppColors.primary.withValues(alpha: 0.3);
+      borderColor = AppColors.success;
+      borderWidth = 2;
+    } else if (isToday && !isCompleted) {
+      // Today but not completed - outline only with incomplete background
+      bgColor = Colors.transparent;
       textColor = AppColors.primary;
+      borderColor = AppColors.primary;
+      borderWidth = 2;
+    } else if (isSelected) {
+      bgColor = AppColors.primary.withOpacity(0.3);
+      textColor = AppColors.primary;
+      borderColor = AppColors.primary;
+      borderWidth = 2;
     } else {
       bgColor = Colors.transparent;
       textColor = isPastDay ? AppColors.textMuted : AppColors.textPrimary;
+      borderColor = AppColors.border.withOpacity(0.3);
+      borderWidth = 1;
     }
     
     return Container(
@@ -379,10 +379,8 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
         color: bgColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: isSelected ? AppColors.primary : 
-                 isCompleted ? AppColors.success : 
-                 AppColors.border.withValues(alpha: 0.3),
-          width: isSelected || isCompleted ? 2 : 1,
+          color: borderColor,
+          width: borderWidth,
         ),
       ),
       child: Center(
@@ -398,15 +396,19 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(String label, Color color, {bool filled = true, bool isToday = false}) {
     return Row(
       children: [
         Container(
           width: 16,
           height: 16,
           decoration: BoxDecoration(
-            color: color,
+            color: filled ? color : Colors.transparent,
             shape: BoxShape.circle,
+            border: Border.all(
+              color: color,
+              width: isToday ? 2 : (filled ? 0 : 1),
+            ),
           ),
         ),
         SizedBox(width: AppSpacing.xs),
@@ -456,13 +458,15 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'This Month\'s Progress',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
+          Center(
+            child: Text(
+              'This Month\'s Progress',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           
@@ -480,9 +484,9 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               ),
               Expanded(
                 child: _buildStatItem(
-                  'Completion Rate',
+                  'Completion',
                   '${(completionRate * 100).toStringAsFixed(0)}%',
-                  '',
+                  'rate',
                   AppColors.primary,
                 ),
               ),
@@ -538,30 +542,43 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
       return;
     }
     
-    // For now, we'll only support toggling today's completion
-    // In a full implementation, we'd need to create/update entries for specific dates
-    final dateString = DateHelpers.formatDateForStorage(date);
-    final todayString = DateHelpers.getTodayLocalDate();
-    
-    if (dateString == todayString) {
-      habitsProvider.toggleHabitCompletion(habit.id);
-    }
+    // Toggle completion for the selected date
+    habitsProvider.toggleHabitCompletionForDate(habit.id, date);
   }
 
   void _showEditHabitDialog(BuildContext context, Habit habit) {
-    // For now, show a simple dialog. In a full implementation, 
-    // this would navigate to an edit screen
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Habit'),
-        content: const Text('Edit functionality will be implemented in a future update.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+    context.push('/habits/edit/${habit.id}');
+  }
+
+  Widget _buildDeleteButton(BuildContext context, Habit habit) {
+    return Center(
+      child: SizedBox(
+        width: 140,
+        child: OutlinedButton.icon(
+          onPressed: () => _showDeleteConfirmation(context, habit),
+          icon: Icon(
+            Icons.delete_outline,
+            color: AppColors.darkEarthyOrange,
+            size: 18,
           ),
-        ],
+          label: Text(
+            'Delete Habit',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.darkEarthyOrange,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AppColors.darkEarthyOrange),
+            padding: EdgeInsets.symmetric(
+              vertical: AppSpacing.sm,
+              horizontal: AppSpacing.md,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+          ),
+        ),
       ),
     );
   }

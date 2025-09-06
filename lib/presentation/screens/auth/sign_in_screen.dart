@@ -48,16 +48,32 @@ class _SignInScreenState extends State<SignInScreen> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(height: AppSpacing.xxxl),
                     
                     // App Logo
                     Center(
                       child: Image.asset(
-                        'assets/images/habitos_logo.png',
-                        height: 80, // Reduced from 120
-                        width: 80,  // Reduced from 120
+                        'assets/images/habitos_logo_flame.png',
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 100,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Icon(
+                              Icons.local_fire_department,
+                              size: 60,
+                              color: AppColors.primary,
+                            ),
+                          );
+                        },
                       ),
                     ),
                     
@@ -87,35 +103,84 @@ class _SignInScreenState extends State<SignInScreen> {
                     
                     SizedBox(height: AppSpacing.xxxl),
                     
-                    // Email Field
-                    CustomTextField(
-                      controller: _emailController,
-                      label: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: Validators.validateEmail,
-                      prefixIcon: Icons.email_outlined,
-                      textCapitalization: TextCapitalization.none,
-                    ),
-                    
-                    SizedBox(height: AppSpacing.lg),
-                    
-                    // Password Field
-                    CustomTextField(
-                      controller: _passwordController,
-                      label: 'Password',
-                      obscureText: _obscurePassword,
-                      validator: Validators.validatePassword,
-                      prefixIcon: Icons.lock_outline,
-                      textCapitalization: TextCapitalization.none,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                    // Form fields container with max width
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      ),
+                      child: Column(
+                        children: [
+                          // Email Field
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: Validators.validateEmail,
+                            prefixIcon: Icons.email_outlined,
+                            textCapitalization: TextCapitalization.none,
+                          ),
+                          
+                          SizedBox(height: AppSpacing.lg),
+                          
+                          // Password Field
+                          CustomTextField(
+                            controller: _passwordController,
+                            label: 'Password',
+                            obscureText: _obscurePassword,
+                            validator: Validators.validatePassword,
+                            prefixIcon: Icons.lock_outline,
+                            textCapitalization: TextCapitalization.none,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          
+                          // Dev Quick Fill Button
+                          if (!_isSignUp) ...[
+                            SizedBox(height: AppSpacing.md),
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _emailController.text = 'ruairiashankeane@gmail.com';
+                                  _passwordController.text = 'Codelol69#';
+                                });
+                              },
+                              icon: Icon(
+                                Icons.developer_mode,
+                                size: 18,
+                                color: AppColors.textMuted,
+                              ),
+                              label: Text(
+                                'Quick Fill (Dev)',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.md,
+                                  vertical: AppSpacing.sm,
+                                ),
+                                backgroundColor: AppColors.surface,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                                  side: BorderSide(
+                                    color: AppColors.border,
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     
@@ -140,50 +205,19 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     
                     // Sign In/Up Button
-                    CustomButton(
-                      text: _isSignUp ? 'Create Account' : 'Sign In',
-                      onPressed: authProvider.isLoading ? null : _handleSubmit,
-                      isLoading: authProvider.isLoading,
-                      backgroundColor: AppColors.signInPrimary,
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      ),
+                      child: CustomButton(
+                        text: _isSignUp ? 'Create Account' : 'Sign In',
+                        onPressed: authProvider.isLoading ? null : _handleSubmit,
+                        isLoading: authProvider.isLoading,
+                        backgroundColor: AppColors.signInPrimary,
+                      ),
                     ),
                     
                     SizedBox(height: AppSpacing.lg),
-                    
-                    // Biometric Sign In Button
-                    if (!_isSignUp)
-                      FutureBuilder<bool>(
-                        future: authProvider.canUseBiometricSignIn(),
-                        builder: (context, snapshot) {
-                          if (snapshot.data == true) {
-                            return Column(
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: authProvider.isLoading ? null : () async {
-                                    await authProvider.signInWithBiometrics();
-                                  },
-                                  icon: Icon(Icons.fingerprint, color: AppColors.signInPrimary),
-                                  label: Text(
-                                    'Sign in with Biometrics',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.signInPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: AppColors.signInPrimary),
-                                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: AppSpacing.lg),
-                              ],
-                            );
-                          }
-                          return SizedBox.shrink();
-                        },
-                      ),
                     
                     // Switch Mode Button
                     TextButton(

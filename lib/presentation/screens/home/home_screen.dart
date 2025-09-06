@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/spacing.dart';
-import '../../../core/constants/tips.dart';
 import '../../providers/habits_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/scroll_provider.dart';
@@ -70,70 +69,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'Good morning!',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w500, // Softer weight
-          ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        actions: [
-          Consumer<AuthProvider>(
-            builder: (context, auth, child) {
-              return Padding(
-                padding: EdgeInsets.only(right: AppSpacing.md),
-                child: CircleAvatar(
-                  backgroundColor: AppColors.primary,
-                  radius: 18,
-                  child: Text(
-                    auth.user?.displayName?.substring(0, 1).toUpperCase() ?? 'U',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.textLight,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: Consumer<ScrollProvider>(
-          builder: (context, scrollProvider, child) {
-            final scrollController = scrollProvider.getScrollController('home');
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: EdgeInsets.all(AppSpacing.screenPadding),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Daily Tip (moved to top)
-                  _buildDailyTip(),
-                  
-                  SizedBox(height: AppSpacing.sectionSpacing),
-                  
-                  // Today's Habits (moved to middle)
-                  _buildTodaysHabits(),
-                  
-                  SizedBox(height: AppSpacing.sectionSpacing),
-                  
-                  // Today's Progress Card (moved to bottom)
-                  _buildProgressCard(),
-                  
-                  SizedBox(height: AppSpacing.xl),
-                ],
-              ),
-            );
-          },
-        ),
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: Consumer<ScrollProvider>(
+        builder: (context, scrollProvider, child) {
+          final scrollController = scrollProvider.getScrollController('home');
+          return SingleChildScrollView(
+            controller: scrollController,
+            padding: EdgeInsets.all(AppSpacing.screenPadding),
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Daily Tip (moved to top)
+                _buildDailyTip(),
+                
+                SizedBox(height: AppSpacing.sectionSpacing),
+                
+                // Today's Habits (moved to middle)
+                _buildTodaysHabits(),
+                
+                SizedBox(height: AppSpacing.sectionSpacing),
+                
+                // Today's Progress Card (moved to bottom)
+                _buildProgressCard(),
+                
+                SizedBox(height: AppSpacing.xl),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -174,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: AppSpacing.md),
               
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -196,20 +162,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   
-                  // Progress Circle
+                  // Progress Circle - centered vertically
                   SizedBox(
-                    width: 100,
-                    child: Center(
-                      child: SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: CircularProgressIndicator(
-                          value: completionRate,
-                          strokeWidth: 8,
-                          backgroundColor: AppColors.divider,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
-                        ),
-                      ),
+                    width: 80,
+                    height: 80,
+                    child: CircularProgressIndicator(
+                      value: completionRate,
+                      strokeWidth: 8,
+                      backgroundColor: AppColors.divider,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
                     ),
                   ),
                 ],
@@ -229,29 +190,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Today\'s Habits',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    context.go('/habits');
-                  },
-                  child: Text(
-                    'View All',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              'Today\'s Habits',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             
             SizedBox(height: AppSpacing.md),
@@ -291,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             else
-              ...todaysHabits.take(3).map((habit) => _buildHabitQuickCard(habit)),
+              ...todaysHabits.map((habit) => _buildHabitQuickCard(habit)),
           ],
         );
       },
@@ -316,9 +260,16 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               border: Border.all(
-                color: isCompleted ? AppColors.success : AppColors.border,
+                color: isCompleted ? AppColors.success.withOpacity(0.3) : AppColors.border.withOpacity(0.2),
                 width: 1,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadow.withOpacity(0.1),
+                  offset: const Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
             child: Column(
             children: [
@@ -367,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         vertical: AppSpacing.xs,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.2),
+                        color: AppColors.warning.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
                       ),
                       child: Row(
@@ -393,40 +344,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               
-              // Milestone Achievement Badge
+              // Milestone Achievement Badge - aligned to left
               if (streakMilestone != null) ...[
-                SizedBox(height: AppSpacing.sm),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: streakMilestone['color'].withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
-                    border: Border.all(
-                      color: streakMilestone['color'],
-                      width: 1,
+                SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    SizedBox(width: 24 + AppSpacing.md), // Offset to align with text
+                    Icon(
+                      streakMilestone['icon'],
+                      size: 14,
+                      color: streakMilestone['color'].withOpacity(0.8),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        streakMilestone['icon'],
-                        size: 14,
-                        color: streakMilestone['color'],
+                    SizedBox(width: 4),
+                    Text(
+                      streakMilestone['title'],
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: streakMilestone['color'].withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
                       ),
-                      SizedBox(width: AppSpacing.xs),
-                      Text(
-                        streakMilestone['title'],
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: streakMilestone['color'],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -437,15 +374,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleHabitCompletion(HabitsProvider provider, String habitId, int currentStreak) {
-    provider.toggleHabitCompletion(habitId);
+  void _handleHabitCompletion(HabitsProvider provider, String habitId, int currentStreak) async {
+    final wasCompleted = provider.isHabitCompletedToday(habitId);
+    await provider.toggleHabitCompletion(habitId);
     
-    // Check for streak milestones and show celebration
-    final newStreak = currentStreak + 1;
-    final milestone = _getStreakMilestone(newStreak);
-    
-    if (milestone != null && [7, 14, 21, 28, 30, 35, 42, 49, 56, 90, 365].contains(newStreak)) {
-      _showStreakCelebration(milestone);
+    // Only show celebration if we're completing (not uncompleting) the habit
+    if (!wasCompleted) {
+      // Wait a bit for the data to be updated, then recalculate streak
+      await Future.delayed(const Duration(milliseconds: 100));
+      final newStreak = _calculateHabitStreak(habitId);
+      final milestone = _getStreakMilestone(newStreak);
+      
+      // Show celebration for milestone achievements
+      if (milestone != null && [7, 14, 21, 28, 30, 35, 42, 49, 56, 90, 365].contains(newStreak)) {
+        _showStreakCelebration(milestone);
+      }
     }
   }
 
@@ -475,9 +418,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   int _calculateHabitStreak(String habitId) {
-    // TODO: Calculate actual streak from habit entries
-    // For now, return a sample streak based on habit ID
-    return (habitId.hashCode % 25) + 1; // Random streak 1-25
+    final habitsProvider = Provider.of<HabitsProvider>(context, listen: false);
+    
+    // Calculate current streak by checking backwards from today
+    int streak = 0;
+    final today = DateTime.now();
+    
+    // Check each day backwards from today until we find an incomplete day
+    for (int i = 0; i < 365; i++) { // Check up to 1 year back
+      final checkDate = today.subtract(Duration(days: i));
+      final dateString = '${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
+      
+      if (habitsProvider.isHabitCompletedOnDate(habitId, dateString)) {
+        streak++;
+      } else {
+        // Break on first incomplete day (streak is broken)
+        break;
+      }
+    }
+    
+    return streak;
   }
 
   Map<String, dynamic>? _getStreakMilestone(int streak) {
@@ -552,63 +512,251 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDailyTip() {
-    final tip = getTipOfTheDay();
+    return Consumer<HabitsProvider>(
+      builder: (context, habitsProvider, child) {
+        // Calculate weekly progress
+        final weeklyCompleted = _calculateWeeklyCompletions(habitsProvider);
+        final todaysHabits = habitsProvider.todaysHabits;
+        final todaysCompleted = habitsProvider.todaysCompletedHabits;
+        final yesterdayData = _getYesterdayProgress(habitsProvider);
+        
+        // Determine greeting message based on performance
+        String mainMessage;
+        String subMessage;
+        IconData progressIcon;
+        Color accentColor;
+        
+        if (weeklyCompleted == 0) {
+          mainMessage = "Start your habit journey today!";
+          subMessage = "Complete your first habit to build momentum";
+          progressIcon = Icons.rocket_launch;
+          accentColor = AppColors.primary;
+        } else if (todaysCompleted.length == todaysHabits.length && todaysHabits.isNotEmpty) {
+          mainMessage = "Perfect day! All ${todaysHabits.length} habits crushed! 🔥";
+          subMessage = "You've completed $weeklyCompleted habits this week";
+          progressIcon = Icons.celebration;
+          accentColor = AppColors.success;
+        } else if ((yesterdayData['total'] ?? 0) > 0 && yesterdayData['completed'] == yesterdayData['total']) {
+          mainMessage = "Yesterday: ${yesterdayData['completed']}/${yesterdayData['total']} ✅ — Keep the streak alive!";
+          subMessage = "Today: ${todaysCompleted.length}/${todaysHabits.length} completed";
+          progressIcon = Icons.local_fire_department;
+          accentColor = AppColors.warning;
+        } else if (weeklyCompleted >= 20) {
+          mainMessage = "You've crushed $weeklyCompleted habits this week!";
+          subMessage = "Today: ${todaysCompleted.length}/${todaysHabits.length} — Keep rolling!";
+          progressIcon = Icons.emoji_events;
+          accentColor = AppColors.success;
+        } else {
+          mainMessage = "$weeklyCompleted habits completed this week";
+          subMessage = todaysHabits.isEmpty 
+              ? "Add some habits to track your progress" 
+              : "Today: ${todaysCompleted.length}/${todaysHabits.length} — Let's go for ${todaysHabits.length}/${todaysHabits.length}!";
+          progressIcon = Icons.trending_up;
+          accentColor = AppColors.primary;
+        }
 
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.cardPadding * 1.5),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                color: AppColors.warning,
-                size: AppSpacing.iconMd,
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Text(
-                'Daily Tip',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+        return Container(
+          padding: EdgeInsets.all(AppSpacing.cardPadding * 1.5),
+          decoration: BoxDecoration(
+            color: AppColors.success,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.success.withOpacity(0.3),
+                offset: const Offset(0, 4),
+                blurRadius: 12,
               ),
             ],
           ),
-          
-          SizedBox(height: AppSpacing.md),
-          
-          Text(
-            tip.title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.textLight,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          offset: const Offset(0, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      progressIcon,
+                      color: AppColors.success,
+                      size: 20,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Progress Update',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.textLight,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Text(
+                          _getTimeBasedGreeting(),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textLight.withOpacity(0.9),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Mini progress visualization
+                  if (todaysHabits.isNotEmpty)
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: CircularProgressIndicator(
+                            value: todaysHabits.isEmpty ? 0 : todaysCompleted.length / todaysHabits.length,
+                            strokeWidth: 4,
+                            backgroundColor: AppColors.textLight.withOpacity(0.3),
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.textLight),
+                          ),
+                        ),
+                        Text(
+                          '${(todaysHabits.isEmpty ? 0 : (todaysCompleted.length / todaysHabits.length * 100)).toInt()}%',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textLight,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              
+              SizedBox(height: AppSpacing.md),
+              
+              Text(
+                mainMessage,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              
+              SizedBox(height: AppSpacing.sm),
+              
+              Text(
+                subMessage,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textLight.withOpacity(0.95),
+                  height: 1.5,
+                ),
+              ),
+              
+              // Weekly progress mini bar
+              if (weeklyCompleted > 0) ...[
+                SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: AppColors.textLight.withOpacity(0.9),
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'This week',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textLight.withOpacity(0.9),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.textLight.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: FractionallySizedBox(
+                          widthFactor: (weeklyCompleted / 50).clamp(0.0, 1.0), // Assuming 50 habits/week is max for visualization
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.textLight,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Text(
+                      '$weeklyCompleted',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
-          
-          SizedBox(height: AppSpacing.sm),
-          
-          Text(
-            tip.content,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+  
+  int _calculateWeeklyCompletions(HabitsProvider provider) {
+    int completions = 0;
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    
+    for (int i = 0; i < now.weekday; i++) {
+      final date = weekStart.add(Duration(days: i));
+      final dateString = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      
+      for (final habit in provider.habits) {
+        if (provider.isHabitCompletedOnDate(habit.id, dateString)) {
+          completions++;
+        }
+      }
+    }
+    
+    return completions;
+  }
+  
+  Map<String, int> _getYesterdayProgress(HabitsProvider provider) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final dateString = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+    
+    int completed = 0;
+    int total = provider.habits.length;
+    
+    for (final habit in provider.habits) {
+      if (provider.isHabitCompletedOnDate(habit.id, dateString)) {
+        completed++;
+      }
+    }
+    
+    return {'completed': completed, 'total': total};
+  }
+  
+  String _getTimeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return "Good morning! Let's make today count";
+    if (hour < 17) return "Good afternoon! Keep the momentum";
+    return "Good evening! Finish strong";
   }
 }

@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Base Colors - Earth Tone Palette
+  // Light Theme Colors
   static const Color background = Color(0xFFF8F6F3);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color primary = Color(0xFF7A8471); // Darker earthy green (from React Native success color)
-  static const Color secondary = Color(0xFF65715A); // Complementary darker green shade
+  static const Color primary = Color(0xFF7D886E); // Sage green (from palette)
+  static const Color secondary = Color(0xFF37514D); // Dark teal green
   
-  // Text Colors
+  // Dark Theme Colors
+  static const Color backgroundDark = Color(0xFF1A1A1A);
+  static const Color surfaceDark = Color(0xFF262626);
+  static const Color primaryDark = Color(0xFF96A089); // Lighter sage for dark mode
+  static const Color secondaryDark = Color(0xFF4A6966); // Lighter teal for dark mode
+  
+  // Destructive action color (for sign out button)
+  static const Color destructive = Color(0xFF2D2D2D); // Black for destructive actions
+  static const Color destructiveDark = Color(0xFFE57373); // Red for dark mode
+  
+  // Text Colors - Light Theme
   static const Color textPrimary = Color(0xFF2D2D2D);
   static const Color textSecondary = Color(0xFF666666);
   static const Color textLight = Color(0xFFFFFFFF);
   static const Color textMuted = Color(0xFF999999);
+  
+  // Text Colors - Dark Theme
+  static const Color textPrimaryDark = Color(0xFFE8E8E8);
+  static const Color textSecondaryDark = Color(0xFFB0B0B0);
+  static const Color textMutedDark = Color(0xFF808080);
   
   // Status Colors
   static const Color success = Color(0xFF96A089); // Lighter green for success states
@@ -29,15 +44,15 @@ class AppColors {
   static const Color divider = Color(0xFFF0F0F0);
   static const Color shadow = Color(0x1A000000);
   
-  // Category Colors - Earth Tones (matches categories.dart)
-  static const Color health = Color(0xFF9CAF88); // Soft sage
-  static const Color fitness = Color(0xFFA67C7C); // Dusty rose
-  static const Color productivity = Color(0xFFD4B85A); // Earth yellow
-  static const Color learning = Color(0xFF8FA4B2); // Dusty blue
-  static const Color mindfulness = Color(0xFF9B8BA4); // Soft lavender-gray
-  static const Color personalCare = Color(0xFFC4A484); // Dusty peach
-  static const Color social = Color(0xFFB8956A); // Warm sand
-  static const Color creativity = Color(0xFFA49B8B); // Mushroom
+  // Category Colors - Earth Tones (matches provided palette)
+  static const Color health = Color(0xFF7D886E); // Sage green
+  static const Color fitness = Color(0xFFB3803F); // Warm golden brown
+  static const Color productivity = Color(0xFFD6E2D2); // Light sage
+  static const Color learning = Color(0xFF87492C); // Rich brown
+  static const Color mindfulness = Color(0xFFA17356); // Medium brown
+  static const Color personalCare = Color(0xFF37514D); // Dark teal green
+  static const Color social = Color(0xFF9A7B4F); // Extended warm brown
+  static const Color creativity = Color(0xFF6B8B73); // Extended medium sage
   
   // Category Colors List for easy access
   static const List<Color> categoryColors = [
@@ -76,9 +91,9 @@ class AppColors {
   }
   
   // Opacity Variants
-  static Color primaryWithOpacity(double opacity) => primary.withValues(alpha: opacity);
-  static Color successWithOpacity(double opacity) => success.withValues(alpha: opacity);
-  static Color errorWithOpacity(double opacity) => error.withValues(alpha: opacity);
+  static Color primaryWithOpacity(double opacity) => primary.withOpacity(opacity);
+  static Color successWithOpacity(double opacity) => success.withOpacity(opacity);
+  static Color errorWithOpacity(double opacity) => error.withOpacity(opacity);
   
   // Gradient Colors
   static const LinearGradient primaryGradient = LinearGradient(

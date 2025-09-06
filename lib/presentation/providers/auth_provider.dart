@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user.dart';
 import '../../data/services/firebase_service.dart';
-import '../../data/services/biometric_service.dart';
 
 enum AuthState {
   initial,
@@ -15,7 +14,6 @@ enum AuthState {
 
 class AuthProvider with ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
-  final BiometricService _biometricService = BiometricService();
   
   AuthState _state = AuthState.initial;
   User? _user;
@@ -62,10 +60,9 @@ class AuthProvider with ChangeNotifier {
           emailVerified: firebaseUser.emailVerified,
         );
         
-        // Store credentials for biometric auth
-        _lastSignInEmail = email;
-        _lastSignInPassword = password;
-        await _saveCredentialsForBiometric(email, password);
+        // Save auth state for persistent login
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('stay_signed_in', true);
         
         _setState(AuthState.authenticated);
       } else {
@@ -107,6 +104,10 @@ class AuthProvider with ChangeNotifier {
     try {
       _setState(AuthState.loading);
       
+      // Clear persistent login preference
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('stay_signed_in', false);
+      
       // Sign out from Firebase
       await _firebaseService.signOut();
       
@@ -121,10 +122,14 @@ class AuthProvider with ChangeNotifier {
     try {
       _setState(AuthState.loading);
       
+      // Check if user wants to stay signed in
+      final prefs = await SharedPreferences.getInstance();
+      final staySignedIn = prefs.getBool('stay_signed_in') ?? false;
+      
       // Check current Firebase user
       final firebaseUser = _firebaseService.currentUser;
       
-      if (firebaseUser != null) {
+      if (firebaseUser != null && staySignedIn) {
         _user = User(
           id: firebaseUser.uid,
           email: firebaseUser.email ?? '',
@@ -134,6 +139,10 @@ class AuthProvider with ChangeNotifier {
           emailVerified: firebaseUser.emailVerified,
         );
         _setState(AuthState.authenticated);
+      } else if (firebaseUser != null && !staySignedIn) {
+        // User is signed in but doesn't want to stay signed in
+        await _firebaseService.signOut();
+        _setState(AuthState.unauthenticated);
       } else {
         _setState(AuthState.unauthenticated);
       }
@@ -156,67 +165,4 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _saveCredentialsForBiometric(String email, String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('biometric_email', email);
-    await prefs.setString('biometric_password', password);
-  }
-
-  Future<bool> canUseBiometricSignIn() async {
-    try {
-      final isEnabled = await _biometricService.isBiometricEnabled();
-      final isAvailable = await _biometricService.isBiometricAvailable();
-      final prefs = await SharedPreferences.getInstance();
-      final hasCredentials = prefs.getString('biometric_email') != null;
-      
-      return isEnabled && isAvailable && hasCredentials;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<void> signInWithBiometrics() async {
-    try {
-      _setState(AuthState.loading);
-      
-      // Check if biometric is available and enabled
-      final canUse = await canUseBiometricSignIn();
-      if (!canUse) {
-        _setError('Biometric authentication not available');
-        return;
-      }
-      
-      // Authenticate with biometrics
-      final isAuthenticated = await _biometricService.authenticate(
-        reason: 'Sign in to Habitos',
-      );
-      
-      if (!isAuthenticated) {
-        _setState(AuthState.unauthenticated);
-        return;
-      }
-      
-      // Get stored credentials
-      final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString('biometric_email');
-      final password = prefs.getString('biometric_password');
-      
-      if (email == null || password == null) {
-        _setError('No stored credentials found');
-        return;
-      }
-      
-      // Sign in with stored credentials
-      await signIn(email, password);
-      
-    } catch (e) {
-      _setError('Biometric sign-in failed: ${e.toString()}');
-    }
-  }
-
-  Future<void> clearBiometricCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('biometric_email');
-    await prefs.remove('biometric_password');
-  }
 }

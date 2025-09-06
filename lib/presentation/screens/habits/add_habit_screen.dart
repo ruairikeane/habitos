@@ -88,7 +88,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                 label: 'Enter habit name',
                 validator: Validators.validateRequired,
                 prefixIcon: Icons.edit,
-                textCapitalization: TextCapitalization.words,
+                textCapitalization: TextCapitalization.sentences,
               ),
               
               SizedBox(height: AppSpacing.sectionSpacing),
@@ -138,6 +138,8 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   );
                 },
               ),
+              
+              SizedBox(height: AppSpacing.xxxl),
             ],
           ),
         ),
@@ -186,7 +188,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.2),
+                    color: category.color.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
@@ -221,7 +223,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.2),
+                    color: category.color.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
@@ -250,42 +252,39 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
 
   Widget _buildIconSelector() {
     return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 8,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
+      height: 56,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
         itemCount: _habitIcons.length,
         itemBuilder: (context, index) {
           final icon = _habitIcons[index];
-          final isSelected = _selectedIcon == icon;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedIcon = icon;
-              });
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
+          final isSelected = icon == _selectedIcon;
+          final categoryColor = AppColors.getCategoryColor(_selectedCategory ?? 'general');
+          
+          return Padding(
+            padding: EdgeInsets.only(right: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedIcon = icon;
+                });
+              },
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: isSelected ? categoryColor : AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  border: Border.all(
+                    color: isSelected ? categoryColor : AppColors.border,
+                    width: 2,
+                  ),
                 ),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected ? AppColors.primary : AppColors.textMuted,
-                size: 24,
+                child: Icon(
+                  icon,
+                  size: 28,
+                  color: isSelected ? AppColors.textLight : AppColors.textSecondary,
+                ),
               ),
             ),
           );

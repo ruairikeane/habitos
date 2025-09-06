@@ -5,6 +5,7 @@ import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/habits_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/providers/scroll_provider.dart';
+import 'presentation/providers/navigation_provider.dart';
 import 'navigation/app_router.dart';
 
 class HabitosApp extends StatelessWidget {
@@ -18,12 +19,15 @@ class HabitosApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HabitsProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ScrollProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp.router(
             title: 'Habitos',
             theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system, // Automatically follow system theme
             debugShowCheckedModeBanner: false,
             routerConfig: AppRouter.router,
           );
